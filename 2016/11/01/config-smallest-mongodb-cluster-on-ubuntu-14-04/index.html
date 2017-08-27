@@ -1,0 +1,887 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="mongodb," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0" />
+
+
+
+
+
+
+<meta name="description" content="在Ubuntu Server 14.04上安装MongoDB 3.2.6 Import the public key used by the package management system sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927   Create a list file for Mon">
+<meta name="keywords" content="mongodb">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在Ubuntu Server 14.04上配置一个最小的MongoDB副本集">
+<meta property="og:url" content="http://ethancai.github.io/2016/11/01/config-smallest-mongodb-cluster-on-ubuntu-14-04/index.html">
+<meta property="og:site_name" content="技术哲学">
+<meta property="og:description" content="在Ubuntu Server 14.04上安装MongoDB 3.2.6 Import the public key used by the package management system sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927   Create a list file for Mon">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://docs.mongodb.com/manual/_images/replica-set-primary-with-secondary-and-arbiter.png">
+<meta property="og:updated_time" content="2017-08-14T03:05:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="在Ubuntu Server 14.04上配置一个最小的MongoDB副本集">
+<meta name="twitter:description" content="在Ubuntu Server 14.04上安装MongoDB 3.2.6 Import the public key used by the package management system sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927   Create a list file for Mon">
+<meta name="twitter:image" content="https://docs.mongodb.com/manual/_images/replica-set-primary-with-secondary-and-arbiter.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 在Ubuntu Server 14.04上配置一个最小的MongoDB副本集 | 技术哲学 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=55756121";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1258773405&web_id=1258773405" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">技术哲学</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">文化、风格、艺术</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                在Ubuntu Server 14.04上配置一个最小的MongoDB副本集
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-11-01T12:59:40+08:00" content="2016-11-01">
+              2016-11-01
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/软件开发/" itemprop="url" rel="index">
+                    <span itemprop="name">软件开发</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2016/11/01/config-smallest-mongodb-cluster-on-ubuntu-14-04/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/11/01/config-smallest-mongodb-cluster-on-ubuntu-14-04/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="在Ubuntu-Server-14-04上安装MongoDB-3-2-6"><a href="#在Ubuntu-Server-14-04上安装MongoDB-3-2-6" class="headerlink" title="在Ubuntu Server 14.04上安装MongoDB 3.2.6"></a>在Ubuntu Server 14.04上安装MongoDB 3.2.6</h1><ul>
+<li>Import the public key used by the package management system<ul>
+<li><code>sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927</code></li>
+</ul>
+</li>
+<li>Create a list file for MongoDB<ul>
+<li><code>echo &quot;deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse&quot; | sudo tee /etc/apt/sources.list.d/mongodb-org-3.2.list</code></li>
+</ul>
+</li>
+<li>Reload local package database<ul>
+<li><code>sudo apt-get update</code></li>
+</ul>
+</li>
+<li>Install the MongoDB packages<ul>
+<li><code>sudo apt-get install -y mongodb-org=3.2.6 mongodb-org-server=3.2.6 mongodb-org-shell=3.2.6 mongodb-org-mongos=3.2.6 mongodb-org-tools=3.2.6</code></li>
+</ul>
+</li>
+<li><p>Pin a specific version of MongoDB</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-server hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-shell hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-mongos hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-tools hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div></pre></td></tr></table></figure>
+</li>
+<li><p>修改MongoDB的配置文件<code>/etc/mongod.conf</code></p>
+<ul>
+<li>修改<code>net.bindIp</code>为<code>0.0.0.0</code></li>
+<li>增加配置<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="attr">storage:</span></div><div class="line"><span class="attr">  directoryPerDB:</span> <span class="literal">true</span></div></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>验证MongoDB是否成功安装</p>
+<ul>
+<li><code>sudo service mongod restart</code></li>
+<li><code>mongo</code></li>
+</ul>
+</li>
+<li><p>Disable Transparent Huge Pages，参考<a href="https://docs.mongodb.com/manual/tutorial/transparent-huge-pages/" target="_blank" rel="external">这里</a></p>
+<ul>
+<li><p>Create the init.d script</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#!/bin/sh</span></div><div class="line"><span class="comment">### BEGIN INIT INFO</span></div><div class="line"><span class="comment"># Provides:          disable-transparent-hugepages</span></div><div class="line"><span class="comment"># Required-Start:    $local_fs</span></div><div class="line"><span class="comment"># Required-Stop:</span></div><div class="line"><span class="comment"># X-Start-Before:    mongod mongodb-mms-automation-agent</span></div><div class="line"><span class="comment"># Default-Start:     2 3 4 5</span></div><div class="line"><span class="comment"># Default-Stop:      0 1 6</span></div><div class="line"><span class="comment"># Short-Description: Disable Linux transparent huge pages</span></div><div class="line"><span class="comment"># Description:       Disable Linux transparent huge pages, to improve</span></div><div class="line"><span class="comment">#                    database performance.</span></div><div class="line"><span class="comment">### END INIT INFO</span></div><div class="line"></div><div class="line"><span class="keyword">case</span> <span class="variable">$1</span> <span class="keyword">in</span></div><div class="line">  start)</div><div class="line">    <span class="keyword">if</span> [ -d /sys/kernel/mm/transparent_hugepage ]; <span class="keyword">then</span></div><div class="line">      thp_path=/sys/kernel/mm/transparent_hugepage</div><div class="line">    <span class="keyword">elif</span> [ -d /sys/kernel/mm/redhat_transparent_hugepage ]; <span class="keyword">then</span></div><div class="line">      thp_path=/sys/kernel/mm/redhat_transparent_hugepage</div><div class="line">    <span class="keyword">else</span></div><div class="line">      <span class="built_in">return</span> 0</div><div class="line">    <span class="keyword">fi</span></div><div class="line"></div><div class="line">    <span class="built_in">echo</span> <span class="string">'never'</span> &gt; <span class="variable">$&#123;thp_path&#125;</span>/enabled</div><div class="line">    <span class="built_in">echo</span> <span class="string">'never'</span> &gt; <span class="variable">$&#123;thp_path&#125;</span>/defrag</div><div class="line"></div><div class="line">    <span class="built_in">unset</span> thp_path</div><div class="line">    ;;</div><div class="line"><span class="keyword">esac</span></div></pre></td></tr></table></figure>
+</li>
+<li><p>Make it executable</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo chmod 755 /etc/init.d/<span class="built_in">disable</span>-transparent-hugepages</div></pre></td></tr></table></figure>
+</li>
+<li><p>Configure your operating system to run it on boot</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo update-rc.d <span class="built_in">disable</span>-transparent-hugepages defaults</div></pre></td></tr></table></figure>
+</li>
+<li><p>重启OS</p>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="配置MongoDB-ReplicaSet副本集"><a href="#配置MongoDB-ReplicaSet副本集" class="headerlink" title="配置MongoDB ReplicaSet副本集"></a>配置MongoDB ReplicaSet副本集</h1><p>副本集结构：</p>
+<p><img src="https://docs.mongodb.com/manual/_images/replica-set-primary-with-secondary-and-arbiter.png" alt=""></p>
+<ul>
+<li>2数据节点，1个仲裁节点</li>
+</ul>
+<h2 id="配置步骤"><a href="#配置步骤" class="headerlink" title="配置步骤"></a>配置步骤</h2><ul>
+<li>准备2台高配ec2（假设为A、B）和1台低配ec2（假设为C）</li>
+<li>在A、B、C上参考上一节的步骤安装MongoDB</li>
+<li><p>在A的Shell中执行<code>mongo</code>命令，然后创建超级管理员</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">$ mongo</div><div class="line">&gt; admin = db.getSiblingDB(<span class="string">"admin"</span>);</div><div class="line">&gt; admin.createUser(&#123; <span class="attr">user</span>: <span class="string">"ethan"</span>, <span class="attr">pwd</span>: <span class="string">"&#123;ethan的密码&#125;"</span>, <span class="attr">roles</span>: [&#123; <span class="attr">role</span>: <span class="string">"root"</span>, <span class="attr">db</span>: <span class="string">"admin"</span> &#125;] &#125;);</div></pre></td></tr></table></figure>
+</li>
+<li><p>准备keyfile</p>
+<ul>
+<li>生成keyfile<ul>
+<li><code>openssl rand -base64 755 &gt; rs0.key</code></li>
+</ul>
+</li>
+<li>上传<code>rs0.key</code>到A、B、C的<code>/etc</code>目录</li>
+<li>修改<code>rs0.key</code>的权限和所有者<ul>
+<li><code>chmod 400 rs0.key</code></li>
+<li><code>chown mongodb:mongodb /etc/rs0.key</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>修改A、B的配置文件<code>/etc/mongod.conf</code></p>
+<ul>
+<li>增加配置<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="attr">security:</span></div><div class="line"><span class="attr">  keyFile:</span> <span class="string">"/etc/rs0.key"</span></div><div class="line"><span class="attr">  authorization:</span> <span class="string">enabled</span></div><div class="line"></div><div class="line"><span class="attr">replication:</span></div><div class="line"><span class="attr">  replSetName:</span> <span class="string">rs0</span></div></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>修改C的配置文件<code>/etc/mongod.conf</code></p>
+<ul>
+<li><p>增加配置</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="attr">security:</span></div><div class="line"><span class="attr">  keyFile:</span> <span class="string">"/etc/rs0.key"</span></div><div class="line"><span class="attr">  authorization:</span> <span class="string">enabled</span></div><div class="line"></div><div class="line"><span class="attr">replication:</span></div><div class="line"><span class="attr">  replSetName:</span> <span class="string">rs0</span></div></pre></td></tr></table></figure>
+</li>
+<li><p>修改配置</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="attr">storage:</span></div><div class="line"><span class="attr">  journal:</span></div><div class="line"><span class="attr">    enabled:</span> <span class="literal">false</span></div></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>重启A、B、C上的<code>mongod</code>实例</p>
+</li>
+<li><p>配置集群</p>
+<ul>
+<li><p>连接A上的<code>mongod</code>实例</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ mongo -u ethan -p &#123;ethan的密码&#125; --authenticationDatabase admin</div></pre></td></tr></table></figure>
+</li>
+<li><p>通过下面的命令配置ReplicaSet：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">&gt; rs.initiate()</div><div class="line">&gt; cfg = rs.conf()</div><div class="line">&gt; cfg.members[<span class="number">0</span>].host = <span class="string">"&#123;A的IP&#125;:27017"</span></div><div class="line">&gt; rs.reconfig(cfg)</div><div class="line">&gt; rs.add(<span class="string">"&#123;B的IP&#125;"</span>)</div><div class="line">&gt; rs.addArb(<span class="string">"&#123;C的IP&#125;"</span>)</div><div class="line"></div><div class="line"><span class="comment">// 等待几秒...</span></div><div class="line">&gt; rs.status()  <span class="comment">// 检查副本集状态</span></div></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>为副本集客户端创建访问账户</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&gt; use &#123;dbname&#125;;</div><div class="line">&gt; db.createUser(&#123; <span class="attr">user</span>: <span class="string">"&#123;账户名&#125;"</span>, <span class="attr">pwd</span>: <span class="string">"&#123;账户密码&#125;"</span>, <span class="attr">roles</span>: [&#123; <span class="attr">role</span>: <span class="string">"readWrite"</span>, <span class="attr">db</span>: <span class="string">"&#123;dbname&#125;"</span> &#125;] &#125;);</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li><a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/" target="_blank" rel="external">Install MongoDB on Ubuntu</a>， 注意：<ul>
+<li>安装过程需要指定MongoDB的安装版本</li>
+<li>锁定MongoDB的安装版本，避免执行<code>apt-get</code>升级命令的时候连带升级MongoDB</li>
+</ul>
+</li>
+<li><a href="https://docs.mongodb.com/manual/tutorial/enforce-keyfile-access-control-in-existing-replica-set/" target="_blank" rel="external">Enforce Keyfile Access Control in a Replica Set</a><ul>
+<li>Security between members of the replica set using Internal Authentication</li>
+<li>Security between connecting clients and the replica set using User Access Controls</li>
+</ul>
+</li>
+<li><a href="https://docs.mongodb.com/manual/reference/configuration-options/#core-options" target="_blank" rel="external">MongoDB configuration file options</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mongodb/" rel="tag">#mongodb</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/08/16/collected-papers/" rel="next" title="收集的论文">
+                <i class="fa fa-chevron-left"></i> 收集的论文
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/11/01/a-path-for-expand-mongodb-cluster/" rel="prev" title="应对业务增长，对MongoDB集群进行扩容的一种路径">
+                应对业务增长，对MongoDB集群进行扩容的一种路径 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Ethan Cai" />
+          <p class="site-author-name" itemprop="name">Ethan Cai</p>
+          <p class="site-description motion-element" itemprop="description">兼容并包、学以致用</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">14</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/EthanCai" target="_blank">
+                  
+                    <i class="fa fa-github"></i> GitHub
+                  
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#在Ubuntu-Server-14-04上安装MongoDB-3-2-6"><span class="nav-number">1.</span> <span class="nav-text">在Ubuntu Server 14.04上安装MongoDB 3.2.6</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#配置MongoDB-ReplicaSet副本集"><span class="nav-number">2.</span> <span class="nav-text">配置MongoDB ReplicaSet副本集</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#配置步骤"><span class="nav-number">2.1.</span> <span class="nav-text">配置步骤</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ethan Cai</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'ethancaigithubio';
+      var disqus_identifier = '2016/11/01/config-smallest-mongodb-cluster-on-ubuntu-14-04/';
+      var disqus_title = '在Ubuntu Server 14.04上配置一个最小的MongoDB副本集';
+      var disqus_url = 'http://ethancai.github.io/2016/11/01/config-smallest-mongodb-cluster-on-ubuntu-14-04/';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+        run_disqus_script('embed.js');
+      
+    </script>
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

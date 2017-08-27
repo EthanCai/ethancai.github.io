@@ -1,0 +1,820 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="mongodb," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0" />
+
+
+
+
+
+
+<meta name="description" content="本文以用户feed作为案例  MongoDB集群结构数据量较小采用MongoDB三节点副本集的方式构造集群  数据量较大使用sharding方式扩展单个集群的容量  数据量非常大不同时期的Feed数据写入到不同的MongoDB Cluster中，避免单个MongoDB集群规模过大带来各种运维上的问题   每个MongoDB Cluster保存的数据包括： 元数据 时间范围：指定当前cluster">
+<meta name="keywords" content="mongodb">
+<meta property="og:type" content="article">
+<meta property="og:title" content="应对业务增长，对MongoDB集群进行扩容的一种路径">
+<meta property="og:url" content="http://ethancai.github.io/2016/11/01/a-path-for-expand-mongodb-cluster/index.html">
+<meta property="og:site_name" content="技术哲学">
+<meta property="og:description" content="本文以用户feed作为案例  MongoDB集群结构数据量较小采用MongoDB三节点副本集的方式构造集群  数据量较大使用sharding方式扩展单个集群的容量  数据量非常大不同时期的Feed数据写入到不同的MongoDB Cluster中，避免单个MongoDB集群规模过大带来各种运维上的问题   每个MongoDB Cluster保存的数据包括： 元数据 时间范围：指定当前cluster">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://cloud.githubusercontent.com/assets/286882/15322892/e004e45c-1c71-11e6-8255-c938c1c8e12a.png">
+<meta property="og:image" content="https://cloud.githubusercontent.com/assets/286882/15322822/80d4167e-1c71-11e6-996d-725800dd5531.jpg">
+<meta property="og:image" content="https://cloud.githubusercontent.com/assets/286882/15310929/c702c694-1c27-11e6-9d4e-f4fbfa4a5abb.jpg">
+<meta property="og:updated_time" content="2017-08-14T03:05:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="应对业务增长，对MongoDB集群进行扩容的一种路径">
+<meta name="twitter:description" content="本文以用户feed作为案例  MongoDB集群结构数据量较小采用MongoDB三节点副本集的方式构造集群  数据量较大使用sharding方式扩展单个集群的容量  数据量非常大不同时期的Feed数据写入到不同的MongoDB Cluster中，避免单个MongoDB集群规模过大带来各种运维上的问题   每个MongoDB Cluster保存的数据包括： 元数据 时间范围：指定当前cluster">
+<meta name="twitter:image" content="https://cloud.githubusercontent.com/assets/286882/15322892/e004e45c-1c71-11e6-8255-c938c1c8e12a.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 应对业务增长，对MongoDB集群进行扩容的一种路径 | 技术哲学 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=55756121";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1258773405&web_id=1258773405" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">技术哲学</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">文化、风格、艺术</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                应对业务增长，对MongoDB集群进行扩容的一种路径
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-11-01T13:21:18+08:00" content="2016-11-01">
+              2016-11-01
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/软件开发/" itemprop="url" rel="index">
+                    <span itemprop="name">软件开发</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2016/11/01/a-path-for-expand-mongodb-cluster/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/11/01/a-path-for-expand-mongodb-cluster/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>本文以用户<code>feed</code>作为案例</p>
+</blockquote>
+<h1 id="MongoDB集群结构"><a href="#MongoDB集群结构" class="headerlink" title="MongoDB集群结构"></a>MongoDB集群结构</h1><h2 id="数据量较小"><a href="#数据量较小" class="headerlink" title="数据量较小"></a>数据量较小</h2><p>采用MongoDB三节点副本集的方式构造集群</p>
+<p><img src="https://cloud.githubusercontent.com/assets/286882/15322892/e004e45c-1c71-11e6-8255-c938c1c8e12a.png" alt="replica-set-primary-with-secondary-and-arbiter"></p>
+<h2 id="数据量较大"><a href="#数据量较大" class="headerlink" title="数据量较大"></a>数据量较大</h2><p>使用<code>sharding</code>方式扩展单个集群的容量</p>
+<p><img src="https://cloud.githubusercontent.com/assets/286882/15322822/80d4167e-1c71-11e6-996d-725800dd5531.jpg" alt="shardreplica"></p>
+<h2 id="数据量非常大"><a href="#数据量非常大" class="headerlink" title="数据量非常大"></a>数据量非常大</h2><p>不同时期的Feed数据写入到不同的MongoDB Cluster中，避免单个MongoDB集群规模过大带来各种运维上的问题</p>
+<p><img src="https://cloud.githubusercontent.com/assets/286882/15310929/c702c694-1c27-11e6-9d4e-f4fbfa4a5abb.jpg" alt="multiple_cluster"></p>
+<ul>
+<li>每个MongoDB Cluster保存的数据包括：<ul>
+<li>元数据<ul>
+<li>时间范围：指定当前cluster保存那一段时间的feed信息</li>
+</ul>
+</li>
+<li>Feed数据<ul>
+<li>使用一个collection保存所有用户的feed</li>
+<li>这个collection的根据用户的user_id进行分片，适应写、读扩容场景</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>客户端程序根据MongoDB Cluster的元数据将收到的Feed消息写入到对应的MongoDB Cluster</li>
+<li>客户端程序启动时从所有的MongoDB Cluster中加载元数据</li>
+</ul>
+<h1 id="Feed-DB的结构"><a href="#Feed-DB的结构" class="headerlink" title="Feed DB的结构"></a>Feed DB的结构</h1><p><code>metadata</code>集合</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="attr">"_id"</span>: <span class="string">"cluster_1"</span>,</div><div class="line">    <span class="attr">"name"</span>: <span class="string">"cluster_1"</span>,</div><div class="line">    <span class="attr">"start_date"</span>: new Date(<span class="string">"2016-05-01"</span>),</div><div class="line">    <span class="attr">"end_date"</span>: new Date(<span class="string">"2016-08-01"</span>),</div><div class="line">    <span class="attr">"creator_name"</span>: <span class="string">"ethan"</span>,</div><div class="line">    <span class="attr">"created_at"</span>: new Date(<span class="string">"2016-05-01 00:00:00"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><code>feed</code>集合</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="attr">"_id"</span>: ObjectId(<span class="string">""</span>),</div><div class="line">    <span class="attr">"data_key"</span>: <span class="string">"e6755cfae343b6719cc2121e888b0a41"</span>,</div><div class="line">    <span class="attr">"receiver_id"</span>: <span class="number">1000386</span>,</div><div class="line">    <span class="attr">"sender_id"</span>: <span class="number">1000765</span>,</div><div class="line">    <span class="attr">"event_time"</span>: new Date(<span class="string">"2016-05-01 10:00:00"</span>),</div><div class="line">    <span class="attr">"type"</span>: <span class="number">1</span>,</div><div class="line">    <span class="attr">"data"</span>: &#123;</div><div class="line">        <span class="attr">"fabula_id"</span>: <span class="number">1000983</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><code>feed.data_key</code>用于根据业务对象查找对应<code>feed</code>记录的标识，主要用于删除场景，生成算法如下：</p>
+<ul>
+<li><code>feed.data_key = MMH3Hash(&quot;fabula_&quot; + $fabulaId)</code></li>
+</ul>
+<p><code>feed._id</code>的生成算法：</p>
+<ul>
+<li>同<code>ObjectID</code>的生成算法，包含<code>time</code>, <code>machine identifier</code>, <code>process id</code>, <code>counter</code>四部分，使用<code>feed.event_time</code>作为第一部分</li>
+<li><code>ObjectID</code>生成算法参考: <a href="https://github.com/go-mgo/mgo/blob/v2/bson/bson.go" target="_blank" rel="external">https://github.com/go-mgo/mgo/blob/v2/bson/bson.go</a></li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li><a href="http://mp.weixin.qq.com/s?__biz=MzA5Nzc4OTA1Mw==&amp;mid=2659597071&amp;idx=1&amp;sn=cd8df9f8c52dfbfb54e65adbe19fae27&amp;scene=0#wechat_redirect" target="_blank" rel="external">陌陌：日请求量过亿，谈陌陌的Feed服务优化之路</a></li>
+<li><a href="http://www.tuicool.com/articles/BJRJja" target="_blank" rel="external">几个大型网站的Feeds(Timeline)设计简单对比</a></li>
+<li><a href="http://www.infoq.com/cn/presentations/feed-stream-architecture-in-big-data-era" target="_blank" rel="external">新浪微博：大数据时代的feed流架构</a></li>
+<li><a href="http://itindex.net/detail/52175-feed-%E6%9E%B6%E6%9E%84" target="_blank" rel="external">新浪微博：Feed架构-我们做错了什么</a></li>
+<li><a href="http://timyang.net/data/feed-message-queue/" target="_blank" rel="external">新浪微博：Feed消息队列架构分析</a></li>
+<li><a href="http://ju.outofmemory.cn/entry/223817" target="_blank" rel="external">Pinterest：Pinterest的Feed架构与算法</a></li>
+<li><a href="https://engineering.pinterest.com/blog/building-smarter-home-feed" target="_blank" rel="external">Pinterest：Building a smarter home feed</a></li>
+<li><a href="https://engineering.pinterest.com/blog/building-scalable-and-available-home-feed" target="_blank" rel="external">Pinterest：Building a scalable and available home feed</a></li>
+<li><a href="https://mp.weixin.qq.com/s?__biz=MzA4OTk5OTQzMg==&amp;mid=2449231037&amp;idx=1&amp;sn=c2fc8a7d2832ea109e2abe4b773ff1f5&amp;scene=1&amp;srcid=0509fzQ02Jubcqnw7WPzp6IO" target="_blank" rel="external">Pinterest：Pinterest 的 Smart Feed 架构与算法</a></li>
+<li><a href="https://engineering.pinterest.com/blog/pinnability-machine-learning-home-feed" target="_blank" rel="external">Pinterest：Pinnability: Machine learning in the home feed</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mongodb/" rel="tag">#mongodb</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/11/01/config-smallest-mongodb-cluster-on-ubuntu-14-04/" rel="next" title="在Ubuntu Server 14.04上配置一个最小的MongoDB副本集">
+                <i class="fa fa-chevron-left"></i> 在Ubuntu Server 14.04上配置一个最小的MongoDB副本集
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/11/01/general-pagination-for-mobile-app/" rel="prev" title="支持游标和偏移量的通用翻页机制">
+                支持游标和偏移量的通用翻页机制 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Ethan Cai" />
+          <p class="site-author-name" itemprop="name">Ethan Cai</p>
+          <p class="site-description motion-element" itemprop="description">兼容并包、学以致用</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">14</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/EthanCai" target="_blank">
+                  
+                    <i class="fa fa-github"></i> GitHub
+                  
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MongoDB集群结构"><span class="nav-number">1.</span> <span class="nav-text">MongoDB集群结构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#数据量较小"><span class="nav-number">1.1.</span> <span class="nav-text">数据量较小</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据量较大"><span class="nav-number">1.2.</span> <span class="nav-text">数据量较大</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据量非常大"><span class="nav-number">1.3.</span> <span class="nav-text">数据量非常大</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Feed-DB的结构"><span class="nav-number">2.</span> <span class="nav-text">Feed DB的结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ethan Cai</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'ethancaigithubio';
+      var disqus_identifier = '2016/11/01/a-path-for-expand-mongodb-cluster/';
+      var disqus_title = '应对业务增长，对MongoDB集群进行扩容的一种路径';
+      var disqus_url = 'http://ethancai.github.io/2016/11/01/a-path-for-expand-mongodb-cluster/';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+        run_disqus_script('embed.js');
+      
+    </script>
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

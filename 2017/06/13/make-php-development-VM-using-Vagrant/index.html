@@ -1,0 +1,819 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="php," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0" />
+
+
+
+
+
+
+<meta name="description" content="这篇文章介绍的项目地址：https://github.com/EthanCai/php-dev-vm 简介php-dev-vm可以帮助快速构建PHP虚拟机开发环境。你也可以修改Vagrantfile，定制自己的PHP虚拟机开发环境。 解决什么问题多人团队开发环境不同步一般带来如下问题：  不同电脑上单独安装配置占用时间，后续解决环境配置、依赖等问题也会占用较多工作时间，团队越大问题越突出 没有标">
+<meta name="keywords" content="php">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2 - Make PHP development VM using Vagrant | Study PHP">
+<meta property="og:url" content="http://ethancai.github.io/2017/06/13/make-php-development-VM-using-Vagrant/index.html">
+<meta property="og:site_name" content="技术哲学">
+<meta property="og:description" content="这篇文章介绍的项目地址：https://github.com/EthanCai/php-dev-vm 简介php-dev-vm可以帮助快速构建PHP虚拟机开发环境。你也可以修改Vagrantfile，定制自己的PHP虚拟机开发环境。 解决什么问题多人团队开发环境不同步一般带来如下问题：  不同电脑上单独安装配置占用时间，后续解决环境配置、依赖等问题也会占用较多工作时间，团队越大问题越突出 没有标">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://ethancai.github.io/2017/06/13/make-php-development-VM-using-Vagrant/make-php-development-VM-using-Vagrant-13489.png">
+<meta property="og:updated_time" content="2017-08-14T03:05:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="2 - Make PHP development VM using Vagrant | Study PHP">
+<meta name="twitter:description" content="这篇文章介绍的项目地址：https://github.com/EthanCai/php-dev-vm 简介php-dev-vm可以帮助快速构建PHP虚拟机开发环境。你也可以修改Vagrantfile，定制自己的PHP虚拟机开发环境。 解决什么问题多人团队开发环境不同步一般带来如下问题：  不同电脑上单独安装配置占用时间，后续解决环境配置、依赖等问题也会占用较多工作时间，团队越大问题越突出 没有标">
+<meta name="twitter:image" content="http://ethancai.github.io/2017/06/13/make-php-development-VM-using-Vagrant/make-php-development-VM-using-Vagrant-13489.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 2 - Make PHP development VM using Vagrant | Study PHP | 技术哲学 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=55756121";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1258773405&web_id=1258773405" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">技术哲学</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">文化、风格、艺术</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                2 - Make PHP development VM using Vagrant | Study PHP
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-06-13T17:42:06+08:00" content="2017-06-13">
+              2017-06-13
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/软件开发/" itemprop="url" rel="index">
+                    <span itemprop="name">软件开发</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2017/06/13/make-php-development-VM-using-Vagrant/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/06/13/make-php-development-VM-using-Vagrant/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <img src="/2017/06/13/make-php-development-VM-using-Vagrant/make-php-development-VM-using-Vagrant-13489.png" alt="make-php-development-VM-using-Vagrant-13489.png" title="">
+<p>这篇文章介绍的项目地址：<a href="https://github.com/EthanCai/php-dev-vm" target="_blank" rel="external">https://github.com/EthanCai/php-dev-vm</a></p>
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p><code>php-dev-vm</code>可以帮助快速构建<code>PHP</code>虚拟机开发环境。你也可以修改<code>Vagrantfile</code>，定制自己的<code>PHP</code>虚拟机开发环境。</p>
+<h1 id="解决什么问题"><a href="#解决什么问题" class="headerlink" title="解决什么问题"></a>解决什么问题</h1><p>多人团队开发环境不同步一般带来如下问题：</p>
+<ul>
+<li>不同电脑上单独安装配置占用时间，后续解决环境配置、依赖等问题也会占用较多工作时间，团队越大问题越突出</li>
+<li>没有标准安装、配置步骤，不同工程师水平不一致，每次环境配置的最终结果可能不一致，最终导致开发时存在潜在调试、运行等问题，解决办法也无法快速在团队中应用</li>
+<li>环境安装配置对新人是障碍，耽误熟悉业务代码时间，资深工程师帮助新人配置环境也占用时间</li>
+<li>开发环境后续调整、同步也是障碍</li>
+</ul>
+<h1 id="做什么-为什么使用VM，而不是Docker"><a href="#做什么-为什么使用VM，而不是Docker" class="headerlink" title="做什么 - 为什么使用VM，而不是Docker"></a>做什么 - 为什么使用VM，而不是Docker</h1><p>如果能够实现自动化的构建开发环境，通过指定的分发机制同步开发环境配置，就可以很好解决以上问题。</p>
+<p>通过<code>Vagrant</code>这个工具自动化构建开发环境虚拟机镜像，将开发环境需要的软件、配置打包到镜像中，然后通过<code>Rsync</code>或者<code>FTP</code>分发镜像，可以实现这一点，满足我们的需求。</p>
+<p>至于为什么不使用 <strong>PHP Docker镜像</strong>，是因为目前生产环境中PHP程序运行在虚拟机中，迁移不是短时间就能完成的事情。</p>
+<h1 id="怎么做-使用Vagrant制作PHP虚拟机开发环境"><a href="#怎么做-使用Vagrant制作PHP虚拟机开发环境" class="headerlink" title="怎么做 - 使用Vagrant制作PHP虚拟机开发环境"></a>怎么做 - 使用<code>Vagrant</code>制作PHP虚拟机开发环境</h1><p>可以通过本项目快速构建PHP虚拟机开发环境。</p>
+<h2 id="依赖软件"><a href="#依赖软件" class="headerlink" title="依赖软件"></a>依赖软件</h2><ul>
+<li>macOS Sierra Version 10.12.5</li>
+<li><code>homebrew</code></li>
+<li><code>vagrantup</code></li>
+<li><code>virualbox</code></li>
+</ul>
+<h2 id="安装依赖Vagrant-Box"><a href="#安装依赖Vagrant-Box" class="headerlink" title="安装依赖Vagrant Box"></a>安装依赖Vagrant Box</h2><p>Install CentOS 7.2 box</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&gt; vagrant box add <span class="string">"CentOS-7.2-x64"</span> https://github.com/CommanderK5/packer-centos-template/releases/download/0.7.2/vagrant-centos-7.2.box</div></pre></td></tr></table></figure>
+<h2 id="如何构建PHP开发环境Vagrant-Box"><a href="#如何构建PHP开发环境Vagrant-Box" class="headerlink" title="如何构建PHP开发环境Vagrant Box"></a>如何构建PHP开发环境Vagrant Box</h2><h3 id="构建php-dev-vm-5-6-30-box"><a href="#构建php-dev-vm-5-6-30-box" class="headerlink" title="构建php-dev-vm-5.6.30.box"></a>构建<code>php-dev-vm-5.6.30.box</code></h3><p>编写<code>Vagrantfile</code>:</p>
+<p>见<a href="./src/PHP-5.6.30/Vagrantfile">这里</a></p>
+<p>构建<code>Vagrant Box</code>:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">&gt; <span class="comment"># start vm</span></div><div class="line">&gt; vagrant up</div><div class="line"></div><div class="line">&gt; <span class="comment"># config mysql root password</span></div><div class="line">&gt; mysql_secure_installation</div><div class="line">&gt; <span class="comment"># todo: add more config statements</span></div><div class="line"></div><div class="line">&gt; <span class="comment"># create vagrant box</span></div><div class="line">&gt; vagrant package --output <span class="string">"php-dev-vm-5.6.30.box"</span> &#123;vm_id&#125; &amp;&amp; mv php-dev-vm-5.6.30.box ../../box/</div></pre></td></tr></table></figure>
+<h2 id="如何使用Vagrant-Box启动PHP开发环境虚拟机"><a href="#如何使用Vagrant-Box启动PHP开发环境虚拟机" class="headerlink" title="如何使用Vagrant Box启动PHP开发环境虚拟机"></a>如何使用Vagrant Box启动PHP开发环境虚拟机</h2><h3 id="使用-php-dev-vm-5-6-30-box"><a href="#使用-php-dev-vm-5-6-30-box" class="headerlink" title="使用 php-dev-vm-5.6.30.box"></a>使用 <code>php-dev-vm-5.6.30.box</code></h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">&gt; <span class="comment"># build php-dev-vm-5.6.30.box or download box from ftp://10.75.87.202/php-dev-vm-5.6.30.box (get the url from Ethan if not available)</span></div><div class="line">&gt; wget ftp://10.75.87.202/php-dev-vm-5.6.30.box &amp;&amp; mv php-dev-vm-5.6.30.box ./box/php-dev-vm-5.6.30.box</div><div class="line"></div><div class="line">&gt; <span class="built_in">cd</span> work/php56</div><div class="line">&gt; vagrant box remove <span class="string">"../../box/php-dev-vm-5.6.30.box"</span> || <span class="literal">true</span> &amp;&amp; vagrant up  <span class="comment"># ignore error when box not exists</span></div><div class="line"></div><div class="line">&gt; <span class="comment"># the password of mysql `root` user is `eVkU,iO);5R&gt;`</span></div></pre></td></tr></table></figure>
+<h1 id="References"><a href="#References" class="headerlink" title="References"></a>References</h1><ul>
+<li>Vagrant: <a href="https://www.vagrantup.com/docs/index.html" target="_blank" rel="external">https://www.vagrantup.com/docs/index.html</a></li>
+<li>Discover Vagrant Boxes<ul>
+<li><a href="https://atlas.hashicorp.com/boxes/search" target="_blank" rel="external">https://atlas.hashicorp.com/boxes/search</a></li>
+<li><a href="http://www.vagrantbox.es/" target="_blank" rel="external">http://www.vagrantbox.es/</a></li>
+</ul>
+</li>
+<li>Nginx配置<ul>
+<li><a href="http://nginx.org/en/docs/beginners_guide.html" target="_blank" rel="external">Nginx Beginner’s Guide</a></li>
+<li><a href="https://nealpoole.com/blog/2011/04/setting-up-php-fastcgi-and-nginx-dont-trust-the-tutorials-check-your-configuration/" target="_blank" rel="external">Setting up PHP-FastCGI and nginx? Don’t trust the tutorials: check your configuration!</a></li>
+<li><a href="https://segmentfault.com/a/1190000003067656" target="_blank" rel="external">nginx和php-fpm基础环境的安装和配置</a></li>
+</ul>
+</li>
+<li>PHP-FPM配置<ul>
+<li>FastCGI 进程管理器（FPM）配置：<a href="http://php.net/manual/zh/install.fpm.configuration.php" target="_blank" rel="external">http://php.net/manual/zh/install.fpm.configuration.php</a></li>
+<li><a href="https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/" target="_blank" rel="external">https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/</a></li>
+</ul>
+</li>
+<li>PHP Function Reference／扩展列表<ul>
+<li><a href="http://php.net/manual/en/funcref.php" target="_blank" rel="external">http://php.net/manual/en/funcref.php</a></li>
+</ul>
+</li>
+<li><a href="https://confluence.jetbrains.com/display/PhpStorm/Debugging+with+PhpStorm" target="_blank" rel="external">Debugging with PhpStorm</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/php/" rel="tag">#php</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/17/study-php-and-symfony-on-mac-os/" rel="next" title="1 - Install PHP | Study PHP">
+                <i class="fa fa-chevron-left"></i> 1 - Install PHP | Study PHP
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/07/12/cracking-the-coding-skill/" rel="prev" title="如何搞定技术面试编码环节">
+                如何搞定技术面试编码环节 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Ethan Cai" />
+          <p class="site-author-name" itemprop="name">Ethan Cai</p>
+          <p class="site-description motion-element" itemprop="description">兼容并包、学以致用</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">14</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/EthanCai" target="_blank">
+                  
+                    <i class="fa fa-github"></i> GitHub
+                  
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解决什么问题"><span class="nav-number">2.</span> <span class="nav-text">解决什么问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#做什么-为什么使用VM，而不是Docker"><span class="nav-number">3.</span> <span class="nav-text">做什么 - 为什么使用VM，而不是Docker</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#怎么做-使用Vagrant制作PHP虚拟机开发环境"><span class="nav-number">4.</span> <span class="nav-text">怎么做 - 使用Vagrant制作PHP虚拟机开发环境</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#依赖软件"><span class="nav-number">4.1.</span> <span class="nav-text">依赖软件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装依赖Vagrant-Box"><span class="nav-number">4.2.</span> <span class="nav-text">安装依赖Vagrant Box</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何构建PHP开发环境Vagrant-Box"><span class="nav-number">4.3.</span> <span class="nav-text">如何构建PHP开发环境Vagrant Box</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#构建php-dev-vm-5-6-30-box"><span class="nav-number">4.3.1.</span> <span class="nav-text">构建php-dev-vm-5.6.30.box</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何使用Vagrant-Box启动PHP开发环境虚拟机"><span class="nav-number">4.4.</span> <span class="nav-text">如何使用Vagrant Box启动PHP开发环境虚拟机</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-php-dev-vm-5-6-30-box"><span class="nav-number">4.4.1.</span> <span class="nav-text">使用 php-dev-vm-5.6.30.box</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#References"><span class="nav-number">5.</span> <span class="nav-text">References</span></a></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ethan Cai</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'ethancaigithubio';
+      var disqus_identifier = '2017/06/13/make-php-development-VM-using-Vagrant/';
+      var disqus_title = '2 - Make PHP development VM using Vagrant | Study PHP';
+      var disqus_url = 'http://ethancai.github.io/2017/06/13/make-php-development-VM-using-Vagrant/';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+        run_disqus_script('embed.js');
+      
+    </script>
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>
