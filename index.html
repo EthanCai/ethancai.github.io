@@ -232,6 +232,143 @@
             
               
                 
+                <a class="post-title-link" href="/2017/11/18/create-a-launch-agents-in-macOS/" itemprop="url">
+                  在macOS上创建自启动服务解决软件启动时的注册验证问题
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2017-11-18T19:54:23+08:00" content="2017-11-18">
+              2017-11-18
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/善用佳软/" itemprop="url" rel="index">
+                    <span itemprop="name">善用佳软</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2017/11/18/create-a-launch-agents-in-macOS/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/11/18/create-a-launch-agents-in-macOS/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <img src="/2017/11/18/create-a-launch-agents-in-macOS/2a73dea7a35b4a2057eec46b15c17133.png">
+<p>经常使用的一个开发软件需要注册。网上找了一个注册证书服务程序，这个程序启动后会提供一个注册服务。软件启动的时候，提供这个服务监听的本地<strong>http</strong>端口，就能自动通过注册验证。但是这个注册证书服务程序是个命令行程序，每次手动启动这个程序实在太麻烦，我就想把这个程序做成一个后台服务，这样就节省了每次手动操作的时间。在macOS可以通过<code>launchd</code>启动后台服务，关于<code>launchd</code>，wiki2上介绍如下：</p>
+<blockquote>
+<p>In computing, launchd, a unified service-management framework, starts, stops and manages daemons, applications, processes, and scripts.</p>
+<p>There are two main programs in the launchd system: launchd and launchctl.</p>
+<p>launchd manages the daemons at both a system and user level. Similar to xinetd, launchd can start daemons on demand. Similar to watchdogd, launchd can monitor daemons to make sure that they keep running. launchd also has replaced init as PID 1 on macOS and as a result it is responsible for starting the system at boot time.</p>
+<p>Configuration files define the parameters of services run by launchd. Stored in the LaunchAgents and LaunchDaemons subdirectories of the Library folders, the property list-based files have approximately thirty different keys that can be set. launchd itself has no knowledge of these configuration files or any ability to read them - that is the responsibility of “launchctl”.</p>
+<p>launchctl is a command line application which talks to launchd using IPC and knows how to parse the property list files used to describe launchd jobs, serializing them using a specialized dictionary protocol that launchd understands. launchctl can be used to load and unload daemons, start and stop launchd controlled jobs, get system utilization statistics for launchd and its child processes, and set environment settings.</p>
+</blockquote>
+<p><strong>具体操作步骤如下：</strong></p>
+<p>在<code>/Users/{your_username}/Library/LaunchAgents</code>下创建<code>com.myutils.licsrv.plist</code>文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span><br><span class="line">&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;</span><br><span class="line">&lt;plist version=&quot;1.0&quot;&gt;</span><br><span class="line">  &lt;dict&gt;</span><br><span class="line">    &lt;key&gt;Label&lt;/key&gt;</span><br><span class="line">    &lt;string&gt;com.myutils.licsrv.activator&lt;/string&gt;</span><br><span class="line">    &lt;key&gt;ProgramArguments&lt;/key&gt;</span><br><span class="line">    &lt;array&gt;</span><br><span class="line">       &lt;string&gt;/Users/&#123;your_username&#125;/Applications/myutils/licsrv.darwin.amd64&lt;/string&gt;</span><br><span class="line">    &lt;/array&gt;</span><br><span class="line">    &lt;key&gt;RunAtLoad&lt;/key&gt;</span><br><span class="line">    &lt;true/&gt;</span><br><span class="line">    &lt;key&gt;StandardErrorPath&lt;/key&gt;</span><br><span class="line">    &lt;string&gt;/dev/null&lt;/string&gt;</span><br><span class="line">    &lt;key&gt;StandardOutPath&lt;/key&gt;</span><br><span class="line">    &lt;string&gt;/dev/null&lt;/string&gt;</span><br><span class="line">  &lt;/dict&gt;</span><br><span class="line">&lt;/plist&gt;</span><br></pre></td></tr></table></figure>
+<p>将注册证书服务程序拷贝到<code>/Users/{your_username}/Applications/myutils</code>目录下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt; launchctl load com.myutils.licsrv.plist</span><br><span class="line">&gt; launchctl start com.myutils.licsrv.plist</span><br><span class="line">&gt; ps aux | grep licsrv</span><br></pre></td></tr></table></figure>
+<p>然后重启再测试一下，这样一个后台服务就创建好了。</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li><a href="https://developer.apple.com/library/content/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/Introduction.html" target="_blank" rel="noopener">Daemons and Services Programming Guide</a><ul>
+<li><a href="https://developer.apple.com/library/content/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html" target="_blank" rel="noopener">Creating Launch Daemons and Agents</a></li>
+</ul>
+</li>
+<li><a href="http://www.launchd.info/" target="_blank" rel="noopener">launchd info</a></li>
+<li><a href="https://wiki2.org/en/Launchd" target="_blank" rel="noopener">wiki2 - launchd</a></li>
+</ul>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2017/07/12/cracking-the-coding-skill/" itemprop="url">
                   如何搞定技术面试编码环节
                 </a>
@@ -302,7 +439,7 @@
         
           
             <p>编码，是软件工程师必须掌握的技能。以下介绍的方法，帮助软件工程师更顺利的通过技术面试的编码环节。</p>
-<img src="/2017/07/12/cracking-the-coding-skill/cracking_the_coding_skills.png" alt="cracking_the_coding_skills.png" title="">
+<img src="/2017/07/12/cracking-the-coding-skill/cracking_the_coding_skills.png">
 <p><strong>解决问题的步骤</strong></p>
 <ol>
 <li>听：仔细聆听问题描述，完整获取信息</li>
@@ -366,13 +503,13 @@
 <li>基础概念：Big-O Time, Big-O Space, Recursion &amp; Memoization, Probability, Bit Manipulation</li>
 </ol>
 <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
-<li><a href="https://www.slideshare.net/gayle2/cracking-the-coding-interview-college" target="_blank" rel="external">Cracking the Coding interview</a><ul>
-<li><a href="https://github.com/careercup/CtCI-6th-Edition-Python" target="_blank" rel="external">Cracking the Coding Interview 6th Ed. Python Solutions</a></li>
+<li><a href="https://www.slideshare.net/gayle2/cracking-the-coding-interview-college" target="_blank" rel="noopener">Cracking the Coding interview</a><ul>
+<li><a href="https://github.com/careercup/CtCI-6th-Edition-Python" target="_blank" rel="noopener">Cracking the Coding Interview 6th Ed. Python Solutions</a></li>
 </ul>
 </li>
-<li><a href="https://www.slideshare.net/gayle2/architecture-of-tech-interviews" target="_blank" rel="external">Architecture of Tech Interviews</a></li>
-<li><a href="https://mp.weixin.qq.com/s?__biz=MzA4ODMwMDcxMQ==&amp;mid=2650892256&amp;idx=1&amp;sn=71e0987c7c61ca25c58f586b60de3305" target="_blank" rel="external">在AWS面试是怎样一种体验</a></li>
-<li><a href="https://www.amazon.jobs/principles" target="_blank" rel="external">Amazon Leadership Principles</a></li>
+<li><a href="https://www.slideshare.net/gayle2/architecture-of-tech-interviews" target="_blank" rel="noopener">Architecture of Tech Interviews</a></li>
+<li><a href="https://mp.weixin.qq.com/s?__biz=MzA4ODMwMDcxMQ==&amp;mid=2650892256&amp;idx=1&amp;sn=71e0987c7c61ca25c58f586b60de3305" target="_blank" rel="noopener">在AWS面试是怎样一种体验</a></li>
+<li><a href="https://www.amazon.jobs/principles" target="_blank" rel="noopener">Amazon Leadership Principles</a></li>
 </ul>
 
           
@@ -488,8 +625,8 @@
       
         
           
-            <img src="/2017/06/13/make-php-development-VM-using-Vagrant/make-php-development-VM-using-Vagrant-13489.png" alt="make-php-development-VM-using-Vagrant-13489.png" title="">
-<p>这篇文章介绍的项目地址：<a href="https://github.com/EthanCai/php-dev-vm" target="_blank" rel="external">https://github.com/EthanCai/php-dev-vm</a></p>
+            <img src="/2017/06/13/make-php-development-VM-using-Vagrant/make-php-development-VM-using-Vagrant-13489.png">
+<p>这篇文章介绍的项目地址：<a href="https://github.com/EthanCai/php-dev-vm" target="_blank" rel="noopener">https://github.com/EthanCai/php-dev-vm</a></p>
 <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p><code>php-dev-vm</code>可以帮助快速构建<code>PHP</code>虚拟机开发环境。你也可以修改<code>Vagrantfile</code>，定制自己的<code>PHP</code>虚拟机开发环境。</p>
 <h1 id="解决什么问题"><a href="#解决什么问题" class="headerlink" title="解决什么问题"></a>解决什么问题</h1><p>多人团队开发环境不同步一般带来如下问题：</p>
 <ul>
@@ -509,35 +646,35 @@
 <li><code>virualbox</code></li>
 </ul>
 <h2 id="安装依赖Vagrant-Box"><a href="#安装依赖Vagrant-Box" class="headerlink" title="安装依赖Vagrant Box"></a>安装依赖Vagrant Box</h2><p>Install CentOS 7.2 box</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&gt; vagrant box add <span class="string">"CentOS-7.2-x64"</span> https://github.com/CommanderK5/packer-centos-template/releases/download/0.7.2/vagrant-centos-7.2.box</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt; vagrant box add <span class="string">"CentOS-7.2-x64"</span> https://github.com/CommanderK5/packer-centos-template/releases/download/0.7.2/vagrant-centos-7.2.box</span><br></pre></td></tr></table></figure>
 <h2 id="如何构建PHP开发环境Vagrant-Box"><a href="#如何构建PHP开发环境Vagrant-Box" class="headerlink" title="如何构建PHP开发环境Vagrant Box"></a>如何构建PHP开发环境Vagrant Box</h2><h3 id="构建php-dev-vm-5-6-30-box"><a href="#构建php-dev-vm-5-6-30-box" class="headerlink" title="构建php-dev-vm-5.6.30.box"></a>构建<code>php-dev-vm-5.6.30.box</code></h3><p>编写<code>Vagrantfile</code>:</p>
 <p>见<a href="./src/PHP-5.6.30/Vagrantfile">这里</a></p>
 <p>构建<code>Vagrant Box</code>:</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">&gt; <span class="comment"># start vm</span></div><div class="line">&gt; vagrant up</div><div class="line"></div><div class="line">&gt; <span class="comment"># config mysql root password</span></div><div class="line">&gt; mysql_secure_installation</div><div class="line">&gt; <span class="comment"># todo: add more config statements</span></div><div class="line"></div><div class="line">&gt; <span class="comment"># create vagrant box</span></div><div class="line">&gt; vagrant package --output <span class="string">"php-dev-vm-5.6.30.box"</span> &#123;vm_id&#125; &amp;&amp; mv php-dev-vm-5.6.30.box ../../box/</div></pre></td></tr></table></figure>
-<h2 id="如何使用Vagrant-Box启动PHP开发环境虚拟机"><a href="#如何使用Vagrant-Box启动PHP开发环境虚拟机" class="headerlink" title="如何使用Vagrant Box启动PHP开发环境虚拟机"></a>如何使用Vagrant Box启动PHP开发环境虚拟机</h2><h3 id="使用-php-dev-vm-5-6-30-box"><a href="#使用-php-dev-vm-5-6-30-box" class="headerlink" title="使用 php-dev-vm-5.6.30.box"></a>使用 <code>php-dev-vm-5.6.30.box</code></h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">&gt; <span class="comment"># build php-dev-vm-5.6.30.box or download box from ftp://10.75.87.202/php-dev-vm-5.6.30.box (get the url from Ethan if not available)</span></div><div class="line">&gt; wget ftp://10.75.87.202/php-dev-vm-5.6.30.box &amp;&amp; mv php-dev-vm-5.6.30.box ./box/php-dev-vm-5.6.30.box</div><div class="line"></div><div class="line">&gt; <span class="built_in">cd</span> work/php56</div><div class="line">&gt; vagrant box remove <span class="string">"../../box/php-dev-vm-5.6.30.box"</span> || <span class="literal">true</span> &amp;&amp; vagrant up  <span class="comment"># ignore error when box not exists</span></div><div class="line"></div><div class="line">&gt; <span class="comment"># the password of mysql `root` user is `eVkU,iO);5R&gt;`</span></div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="comment"># start vm</span></span><br><span class="line">&gt; vagrant up</span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># config mysql root password</span></span><br><span class="line">&gt; mysql_secure_installation</span><br><span class="line">&gt; <span class="comment"># todo: add more config statements</span></span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># create vagrant box</span></span><br><span class="line">&gt; vagrant package --output <span class="string">"php-dev-vm-5.6.30.box"</span> &#123;vm_id&#125; &amp;&amp; mv php-dev-vm-5.6.30.box ../../box/</span><br></pre></td></tr></table></figure>
+<h2 id="如何使用Vagrant-Box启动PHP开发环境虚拟机"><a href="#如何使用Vagrant-Box启动PHP开发环境虚拟机" class="headerlink" title="如何使用Vagrant Box启动PHP开发环境虚拟机"></a>如何使用Vagrant Box启动PHP开发环境虚拟机</h2><h3 id="使用-php-dev-vm-5-6-30-box"><a href="#使用-php-dev-vm-5-6-30-box" class="headerlink" title="使用 php-dev-vm-5.6.30.box"></a>使用 <code>php-dev-vm-5.6.30.box</code></h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="comment"># build php-dev-vm-5.6.30.box or download box from ftp://10.75.87.202/php-dev-vm-5.6.30.box (get the url from Ethan if not available)</span></span><br><span class="line">&gt; wget ftp://10.75.87.202/php-dev-vm-5.6.30.box &amp;&amp; mv php-dev-vm-5.6.30.box ./box/php-dev-vm-5.6.30.box</span><br><span class="line"></span><br><span class="line">&gt; <span class="built_in">cd</span> work/php56</span><br><span class="line">&gt; vagrant box remove <span class="string">"../../box/php-dev-vm-5.6.30.box"</span> || <span class="literal">true</span> &amp;&amp; vagrant up  <span class="comment"># ignore error when box not exists</span></span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># the password of mysql `root` user is `eVkU,iO);5R&gt;`</span></span><br></pre></td></tr></table></figure>
 <h1 id="References"><a href="#References" class="headerlink" title="References"></a>References</h1><ul>
-<li>Vagrant: <a href="https://www.vagrantup.com/docs/index.html" target="_blank" rel="external">https://www.vagrantup.com/docs/index.html</a></li>
+<li>Vagrant: <a href="https://www.vagrantup.com/docs/index.html" target="_blank" rel="noopener">https://www.vagrantup.com/docs/index.html</a></li>
 <li>Discover Vagrant Boxes<ul>
-<li><a href="https://atlas.hashicorp.com/boxes/search" target="_blank" rel="external">https://atlas.hashicorp.com/boxes/search</a></li>
-<li><a href="http://www.vagrantbox.es/" target="_blank" rel="external">http://www.vagrantbox.es/</a></li>
+<li><a href="https://atlas.hashicorp.com/boxes/search" target="_blank" rel="noopener">https://atlas.hashicorp.com/boxes/search</a></li>
+<li><a href="http://www.vagrantbox.es/" target="_blank" rel="noopener">http://www.vagrantbox.es/</a></li>
 </ul>
 </li>
 <li>Nginx配置<ul>
-<li><a href="http://nginx.org/en/docs/beginners_guide.html" target="_blank" rel="external">Nginx Beginner’s Guide</a></li>
-<li><a href="https://nealpoole.com/blog/2011/04/setting-up-php-fastcgi-and-nginx-dont-trust-the-tutorials-check-your-configuration/" target="_blank" rel="external">Setting up PHP-FastCGI and nginx? Don’t trust the tutorials: check your configuration!</a></li>
-<li><a href="https://segmentfault.com/a/1190000003067656" target="_blank" rel="external">nginx和php-fpm基础环境的安装和配置</a></li>
+<li><a href="http://nginx.org/en/docs/beginners_guide.html" target="_blank" rel="noopener">Nginx Beginner’s Guide</a></li>
+<li><a href="https://nealpoole.com/blog/2011/04/setting-up-php-fastcgi-and-nginx-dont-trust-the-tutorials-check-your-configuration/" target="_blank" rel="noopener">Setting up PHP-FastCGI and nginx? Don’t trust the tutorials: check your configuration!</a></li>
+<li><a href="https://segmentfault.com/a/1190000003067656" target="_blank" rel="noopener">nginx和php-fpm基础环境的安装和配置</a></li>
 </ul>
 </li>
 <li>PHP-FPM配置<ul>
-<li>FastCGI 进程管理器（FPM）配置：<a href="http://php.net/manual/zh/install.fpm.configuration.php" target="_blank" rel="external">http://php.net/manual/zh/install.fpm.configuration.php</a></li>
-<li><a href="https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/" target="_blank" rel="external">https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/</a></li>
+<li>FastCGI 进程管理器（FPM）配置：<a href="http://php.net/manual/zh/install.fpm.configuration.php" target="_blank" rel="noopener">http://php.net/manual/zh/install.fpm.configuration.php</a></li>
+<li><a href="https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/" target="_blank" rel="noopener">https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/</a></li>
 </ul>
 </li>
 <li>PHP Function Reference／扩展列表<ul>
-<li><a href="http://php.net/manual/en/funcref.php" target="_blank" rel="external">http://php.net/manual/en/funcref.php</a></li>
+<li><a href="http://php.net/manual/en/funcref.php" target="_blank" rel="noopener">http://php.net/manual/en/funcref.php</a></li>
 </ul>
 </li>
-<li><a href="https://confluence.jetbrains.com/display/PhpStorm/Debugging+with+PhpStorm" target="_blank" rel="external">Debugging with PhpStorm</a></li>
+<li><a href="https://confluence.jetbrains.com/display/PhpStorm/Debugging+with+PhpStorm" target="_blank" rel="noopener">Debugging with PhpStorm</a></li>
 </ul>
 
           
@@ -659,43 +796,43 @@
 <li><code>Homebrew</code></li>
 </ul>
 <h1 id="Install-PHP"><a href="#Install-PHP" class="headerlink" title="Install PHP"></a>Install PHP</h1><p>安装PHP：</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 快速安装php，参考 https://github.com/Homebrew/homebrew-php</span></div><div class="line">&gt; brew install brew-php-switcher</div><div class="line">&gt; brew install php56</div><div class="line"></div><div class="line">&gt; <span class="built_in">which</span> php</div><div class="line">/usr/<span class="built_in">local</span>/bin/php</div><div class="line"></div><div class="line">&gt; <span class="built_in">which</span> php-fpm</div><div class="line">lrwxr-xr-x  1 leeco  admin    32B May 17 15:08 /usr/<span class="built_in">local</span>/bin/php -&gt; ../Cellar/php56/5.6.30_6/bin/php</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 快速安装php，参考 https://github.com/Homebrew/homebrew-php</span></span><br><span class="line">&gt; brew install brew-php-switcher</span><br><span class="line">&gt; brew install php56</span><br><span class="line"></span><br><span class="line">&gt; <span class="built_in">which</span> php</span><br><span class="line">/usr/<span class="built_in">local</span>/bin/php</span><br><span class="line"></span><br><span class="line">&gt; <span class="built_in">which</span> php-fpm</span><br><span class="line">lrwxr-xr-x  1 leeco  admin    32B May 17 15:08 /usr/<span class="built_in">local</span>/bin/php -&gt; ../Cellar/php56/5.6.30_6/bin/php</span><br></pre></td></tr></table></figure>
 <p>配置PHP：</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 配置 /private/etc/php.ini</span></div><div class="line">&gt; sudo vim /usr/<span class="built_in">local</span>/etc/php/5.6/php.ini</div><div class="line"><span class="comment"># date.timezone = Asia/Shanghai</span></div><div class="line"></div><div class="line">&gt; php -i | grep timezone</div><div class="line">Default timezone =&gt; Asia/Shanghai</div><div class="line">date.timezone =&gt; Asia/Shanghai =&gt; Asia/Shanghai</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 配置 /private/etc/php.ini</span></span><br><span class="line">&gt; sudo vim /usr/<span class="built_in">local</span>/etc/php/5.6/php.ini</span><br><span class="line"><span class="comment"># date.timezone = Asia/Shanghai</span></span><br><span class="line"></span><br><span class="line">&gt; php -i | grep timezone</span><br><span class="line">Default timezone =&gt; Asia/Shanghai</span><br><span class="line">date.timezone =&gt; Asia/Shanghai =&gt; Asia/Shanghai</span><br></pre></td></tr></table></figure>
 <p>安装 PEAR 和 PECL:</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 参考 https://jason.pureconcepts.net/2012/10/install-pear-pecl-mac-os-x/</span></div><div class="line">&gt; curl -O http://pear.php.net/go-pear.phar</div><div class="line">&gt; sudo php -d detect_unicode=0 go-pear.phar</div><div class="line"><span class="comment"># Press return</span></div><div class="line"></div><div class="line"><span class="comment"># 安装 intl 扩展，参考 http://note.rpsh.net/posts/2015/10/07/installing-php-intl-extension-os-x-el-capitan/</span></div><div class="line">&gt; sudo pear channel-update pear.php.net</div><div class="line">&gt; sudo pecl channel-update pecl.php.net</div><div class="line">&gt; sudo pear upgrade-all</div></pre></td></tr></table></figure>
-<h2 id="如果要安装多个版本的PHP"><a href="#如果要安装多个版本的PHP" class="headerlink" title="如果要安装多个版本的PHP"></a>如果要安装多个版本的PHP</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 用于在不同版本的php之间切换，参考 https://github.com/philcook/brew-php-switcher</span></div><div class="line">&gt; brew unlink php56</div><div class="line">&gt; brew install php71</div><div class="line"></div><div class="line">&gt; brew-php-switcher 56 -s <span class="comment"># 切回 php 5.6</span></div></pre></td></tr></table></figure>
-<h1 id="Install-Composer"><a href="#Install-Composer" class="headerlink" title="Install Composer"></a>Install Composer</h1><figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&gt; brew install composer</div><div class="line"></div><div class="line">&gt; composer</div></pre></td></tr></table></figure>
-<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-a5831.png" alt="study-php-and-symfony-on-mac-os-a5831.png" title="">
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 参考 https://jason.pureconcepts.net/2012/10/install-pear-pecl-mac-os-x/</span></span><br><span class="line">&gt; curl -O http://pear.php.net/go-pear.phar</span><br><span class="line">&gt; sudo php -d detect_unicode=0 go-pear.phar</span><br><span class="line"><span class="comment"># Press return</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 安装 intl 扩展，参考 http://note.rpsh.net/posts/2015/10/07/installing-php-intl-extension-os-x-el-capitan/</span></span><br><span class="line">&gt; sudo pear channel-update pear.php.net</span><br><span class="line">&gt; sudo pecl channel-update pecl.php.net</span><br><span class="line">&gt; sudo pear upgrade-all</span><br></pre></td></tr></table></figure>
+<h2 id="如果要安装多个版本的PHP"><a href="#如果要安装多个版本的PHP" class="headerlink" title="如果要安装多个版本的PHP"></a>如果要安装多个版本的PHP</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 用于在不同版本的php之间切换，参考 https://github.com/philcook/brew-php-switcher</span></span><br><span class="line">&gt; brew unlink php56</span><br><span class="line">&gt; brew install php71</span><br><span class="line"></span><br><span class="line">&gt; brew-php-switcher 56 -s <span class="comment"># 切回 php 5.6</span></span><br></pre></td></tr></table></figure>
+<h1 id="Install-Composer"><a href="#Install-Composer" class="headerlink" title="Install Composer"></a>Install Composer</h1><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt; brew install composer</span><br><span class="line"></span><br><span class="line">&gt; composer</span><br></pre></td></tr></table></figure>
+<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-a5831.png">
 <h1 id="Install-PHP-Extension"><a href="#Install-PHP-Extension" class="headerlink" title="Install PHP Extension"></a>Install PHP Extension</h1><h2 id="Install-intl"><a href="#Install-intl" class="headerlink" title="Install intl"></a>Install <code>intl</code></h2><p>安装</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&gt; brew install autoconf</div><div class="line">&gt; brew install icu4c</div><div class="line">&gt; brew install php56-intl   <span class="comment"># /usr/local/etc/php/5.6/conf.d/ext-intl.ini was created</span></div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt; brew install autoconf</span><br><span class="line">&gt; brew install icu4c</span><br><span class="line">&gt; brew install php56-intl   <span class="comment"># /usr/local/etc/php/5.6/conf.d/ext-intl.ini was created</span></span><br></pre></td></tr></table></figure>
 <p>检查是否安装成功：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&gt; php -m | grep intl # 正常会包含 intl</div></pre></td></tr></table></figure>
-<h2 id="Install-OPcache"><a href="#Install-OPcache" class="headerlink" title="Install OPcache"></a>Install <code>OPcache</code></h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">&gt; brew install php56-opcache</div><div class="line"></div><div class="line">&gt; brew info php56-opcache</div><div class="line">...</div><div class="line">To finish installing opcache <span class="keyword">for</span> PHP 5.6:</div><div class="line">  * /usr/<span class="built_in">local</span>/etc/php/5.6/conf.d/ext-opcache.ini was created,</div><div class="line">    <span class="keyword">do</span> not forget to remove it upon extension removal.</div><div class="line">  * Validate installation via one of the following methods:</div><div class="line">...</div><div class="line"></div><div class="line">&gt; php -m | grep OPcache  <span class="comment"># 检查 OPcache 是否已生效</span></div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt; php -m | grep intl # 正常会包含 intl</span><br></pre></td></tr></table></figure>
+<h2 id="Install-OPcache"><a href="#Install-OPcache" class="headerlink" title="Install OPcache"></a>Install <code>OPcache</code></h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&gt; brew install php56-opcache</span><br><span class="line"></span><br><span class="line">&gt; brew info php56-opcache</span><br><span class="line">...</span><br><span class="line">To finish installing opcache <span class="keyword">for</span> PHP 5.6:</span><br><span class="line">  * /usr/<span class="built_in">local</span>/etc/php/5.6/conf.d/ext-opcache.ini was created,</span><br><span class="line">    <span class="keyword">do</span> not forget to remove it upon extension removal.</span><br><span class="line">  * Validate installation via one of the following methods:</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">&gt; php -m | grep OPcache  <span class="comment"># 检查 OPcache 是否已生效</span></span><br></pre></td></tr></table></figure>
 <h1 id="Install-Xdebug"><a href="#Install-Xdebug" class="headerlink" title="Install Xdebug"></a>Install <code>Xdebug</code></h1><p>安装：</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">&gt; brew install php56-xdebug</div><div class="line">...</div><div class="line">To finish installing xdebug <span class="keyword">for</span> PHP 5.6:</div><div class="line">  * /usr/<span class="built_in">local</span>/etc/php/5.6/conf.d/ext-xdebug.ini was created,</div><div class="line">    <span class="keyword">do</span> not forget to remove it upon extension removal.</div><div class="line">  * Validate installation via one of the following methods:</div><div class="line">...</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&gt; brew install php56-xdebug</span><br><span class="line">...</span><br><span class="line">To finish installing xdebug <span class="keyword">for</span> PHP 5.6:</span><br><span class="line">  * /usr/<span class="built_in">local</span>/etc/php/5.6/conf.d/ext-xdebug.ini was created,</span><br><span class="line">    <span class="keyword">do</span> not forget to remove it upon extension removal.</span><br><span class="line">  * Validate installation via one of the following methods:</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 <p>The Xdebug extension will be enabled per default after the installation, additional configuration of the extension should be done by adding a custom ini-file to <code>/usr/local/etc/php/&lt;php-version&gt;/conf.d/</code>.</p>
 <p>配置：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">&gt; sudo echo &apos;xdebug.remote_enable=1</div><div class="line">xdebug.remote_host=127.0.0.1</div><div class="line">xdebug.remote_port=9000</div><div class="line">xdebug.profiler_enable=1</div><div class="line">xdebug.profiler_output_dir=&quot;/tmp/xdebug-profiler-output&quot;&apos; &gt;&gt; /usr/local/etc/php/5.6/conf.d/ext-xdebug.ini</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&gt; sudo echo &apos;xdebug.remote_enable=1</span><br><span class="line">xdebug.remote_host=127.0.0.1</span><br><span class="line">xdebug.remote_port=9000</span><br><span class="line">xdebug.profiler_enable=1</span><br><span class="line">xdebug.profiler_output_dir=&quot;/tmp/xdebug-profiler-output&quot;&apos; &gt;&gt; /usr/local/etc/php/5.6/conf.d/ext-xdebug.ini</span><br></pre></td></tr></table></figure>
 <p>安装<code>xdebug-osx</code>（<code>xdebug</code>开关工具）：</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">&gt; brew install xdebug-osx</div><div class="line">...</div><div class="line">Signature:</div><div class="line">  xdebug-toggle &lt;on | off&gt; [--no-server-restart]</div><div class="line"></div><div class="line">Usage:</div><div class="line">  xdebug-toggle         <span class="comment"># outputs the current status</span></div><div class="line">  xdebug-toggle on      <span class="comment"># enables xdebug</span></div><div class="line">  xdebug-toggle off     <span class="comment"># disables xdebug</span></div><div class="line"></div><div class="line">Options:</div><div class="line">  --no-server-restart   <span class="comment"># toggles xdebug without restarting apache or php-fpm</span></div><div class="line">...</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&gt; brew install xdebug-osx</span><br><span class="line">...</span><br><span class="line">Signature:</span><br><span class="line">  xdebug-toggle &lt;on | off&gt; [--no-server-restart]</span><br><span class="line"></span><br><span class="line">Usage:</span><br><span class="line">  xdebug-toggle         <span class="comment"># outputs the current status</span></span><br><span class="line">  xdebug-toggle on      <span class="comment"># enables xdebug</span></span><br><span class="line">  xdebug-toggle off     <span class="comment"># disables xdebug</span></span><br><span class="line"></span><br><span class="line">Options:</span><br><span class="line">  --no-server-restart   <span class="comment"># toggles xdebug without restarting apache or php-fpm</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 <h1 id="Use-PHPStorm-as-IDE"><a href="#Use-PHPStorm-as-IDE" class="headerlink" title="Use PHPStorm as IDE"></a>Use PHPStorm as IDE</h1><h2 id="Config-Language-amp-Frameworks"><a href="#Config-Language-amp-Frameworks" class="headerlink" title="Config Language &amp; Frameworks"></a>Config Language &amp; Frameworks</h2><p>打开<code>Preferences &gt; Languages &amp; Frameworks &gt; PHP</code></p>
-<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-0c6a2.png" alt="study-php-and-symfony-on-mac-os-0c6a2.png" title="">
+<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-0c6a2.png">
 <p>添加CLI Intepreter</p>
-<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-2aa39.png" alt="study-php-and-symfony-on-mac-os-2aa39.png" title="">
+<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-2aa39.png">
 <h2 id="Config-Xdebug"><a href="#Config-Xdebug" class="headerlink" title="Config Xdebug"></a>Config <code>Xdebug</code></h2><p>打开<code>Preferences &gt; Languages &amp; Frameworks &gt; PHP &gt; Debug</code></p>
-<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-33b82.png" alt="study-php-and-symfony-on-mac-os-33b82.png" title="">
-<p>如何配置参考<a href="https://www.jetbrains.com/help/phpstorm/configuring-xdebug.html" target="_blank" rel="external">Configuring Xdebug in PhpStorm</a></p>
+<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-33b82.png">
+<p>如何配置参考<a href="https://www.jetbrains.com/help/phpstorm/configuring-xdebug.html" target="_blank" rel="noopener">Configuring Xdebug in PhpStorm</a></p>
 <h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>创建一个PHP项目，新建一个<code>php</code>文件，创建执行配置：</p>
-<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-6c7bd.png" alt="study-php-and-symfony-on-mac-os-6c7bd.png" title="">
+<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-6c7bd.png">
 <p>打上断点，以<code>Debug</code>方式运行：</p>
-<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-aec25.png" alt="study-php-and-symfony-on-mac-os-aec25.png" title="">
+<img src="/2017/05/17/study-php-and-symfony-on-mac-os/study-php-and-symfony-on-mac-os-aec25.png">
 <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
-<li><a href="https://getgrav.org/blog/macos-sierra-apache-mysql-vhost-apc" target="_blank" rel="external">macOS 10.12 Sierra Apache Setup: MySQL, APC &amp; More…</a></li>
-<li><a href="https://github.com/Homebrew/homebrew-php/issues/1946" target="_blank" rel="external">Cannot find libz when install php56</a></li>
-<li><a href="https://xdebug.org/docs/install" target="_blank" rel="external">How to install Xdebug - Xdebug Documents</a></li>
-<li><a href="https://confluence.jetbrains.com/display/PhpStorm/Xdebug+Installation+Guide" target="_blank" rel="external">Xdebug Installation Guide</a></li>
-<li><a href="https://www.jetbrains.com/help/phpstorm/configuring-xdebug.html" target="_blank" rel="external">PHPStorm Help - Configuring Xdebug</a></li>
+<li><a href="https://getgrav.org/blog/macos-sierra-apache-mysql-vhost-apc" target="_blank" rel="noopener">macOS 10.12 Sierra Apache Setup: MySQL, APC &amp; More…</a></li>
+<li><a href="https://github.com/Homebrew/homebrew-php/issues/1946" target="_blank" rel="noopener">Cannot find libz when install php56</a></li>
+<li><a href="https://xdebug.org/docs/install" target="_blank" rel="noopener">How to install Xdebug - Xdebug Documents</a></li>
+<li><a href="https://confluence.jetbrains.com/display/PhpStorm/Xdebug+Installation+Guide" target="_blank" rel="noopener">Xdebug Installation Guide</a></li>
+<li><a href="https://www.jetbrains.com/help/phpstorm/configuring-xdebug.html" target="_blank" rel="noopener">PHPStorm Help - Configuring Xdebug</a></li>
 </ul>
 
           
@@ -815,7 +952,7 @@
 <p>随着业务需求的变化，某些情况下 App 的翻页机制可能会调整。一般我们通过 App 重新发版，服务端和客户端同步调整分页机制来完成调整。而本文提供了一种通用协议，支持仅通过服务端发版来调整 App 的分页机制。</p>
 <h1 id="常见分页机制"><a href="#常见分页机制" class="headerlink" title="常见分页机制"></a>常见分页机制</h1><h2 id="基于游标的分页"><a href="#基于游标的分页" class="headerlink" title="基于游标的分页"></a>基于游标的分页</h2><p>游标是指标记数据列表中特定项目的一个随机字符串。该项目未被删除时，游标将始终指向列表的相同部分，项目被删除时游标即失效。因此，客户端应用不应存储任何旧的游标，也不能假定它们仍然有效。</p>
 <p>Request的结构一般如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">https://api.sample.com/v3/users/?limit=30&amp;before=NDMyNzQyODI3OTQw</div><div class="line">https://api.sample.com/v3/users/?limit=30&amp;after=MTAxNTExOTQ1MjAwNzI5NDE=</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">https://api.sample.com/v3/users/?limit=30&amp;before=NDMyNzQyODI3OTQw</span><br><span class="line">https://api.sample.com/v3/users/?limit=30&amp;after=MTAxNTExOTQ1MjAwNzI5NDE=</span><br></pre></td></tr></table></figure>
 <p>参数说明：</p>
 <ul>
 <li><strong>limit</strong>：每个页面返回的单独对象的数量。请注意这是上限，如果数据列表中没有足够的剩余对象，那么返回的数量将小于这个数。为防止客户端传入过大的值，某些列表的 <code>limit</code> 值将设置上限。</li>
@@ -823,7 +960,7 @@
 <li><strong>after</strong>：向前查询的起始位置。</li>
 </ul>
 <p>Response结构一般如下：</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">  <span class="attr">"rows"</span>: [</div><div class="line">     ... Endpoint data is here</div><div class="line">  ],</div><div class="line">  <span class="attr">"paging"</span>: &#123;</div><div class="line">    <span class="attr">"cursors"</span>: &#123;</div><div class="line">      <span class="attr">"top"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span>,</div><div class="line">      <span class="attr">"last"</span>: <span class="string">"NDMyNzQyODI3OTQw"</span></div><div class="line">    &#125;,</div><div class="line">    <span class="attr">"previous"</span>: <span class="string">"NDMyNzQyODI3OTQw"</span>,</div><div class="line">    <span class="attr">"next"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span></div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"rows"</span>: [</span><br><span class="line">     ... Endpoint data is here</span><br><span class="line">  ],</span><br><span class="line">  <span class="attr">"paging"</span>: &#123;</span><br><span class="line">    <span class="attr">"cursors"</span>: &#123;</span><br><span class="line">      <span class="attr">"top"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span>,</span><br><span class="line">      <span class="attr">"last"</span>: <span class="string">"NDMyNzQyODI3OTQw"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"previous"</span>: <span class="string">"NDMyNzQyODI3OTQw"</span>,</span><br><span class="line">    <span class="attr">"next"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>参数说明：</p>
 <ul>
 <li><strong>rows</strong>：如果当前页没有数据，或者根据过滤规则（比如隐私）当前页所有数据都被过滤掉，返回空的数组。客户端程序不能根据<code>rows</code>是否为空数组来判断，是否已经滚动到列表的末尾，而应根据下面的<code>next</code>字段是否有值来决定是否滚动到了列表尾部。</li>
@@ -833,7 +970,7 @@
 <li><strong>next</strong>：下一页数据的 API 端点。如果是<code>null</code>或者没有此字段，则表示返回的是最后一页数据。</li>
 </ul>
 <h2 id="基于偏移量的分页"><a href="#基于偏移量的分页" class="headerlink" title="基于偏移量的分页"></a>基于偏移量的分页</h2><p>Request的结构一般如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">https://api.sample.com/v3/users/?limit=30&amp;offset=30</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://api.sample.com/v3/users/?limit=30&amp;offset=30</span><br></pre></td></tr></table></figure>
 <p>参数说明：</p>
 <ul>
 <li><strong>limit</strong>：每个页面返回的单独对象的数量。</li>
@@ -843,7 +980,7 @@
 <p>一般情况下，还会包含其他查询条件，比如根据关键字查找姓名和关键字匹配的用户</p>
 </blockquote>
 <p>Response结构一般如下：</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">  <span class="attr">"rows"</span>: [</div><div class="line">     ... Endpoint data is here</div><div class="line">  ],</div><div class="line">  <span class="attr">"count"</span>: <span class="number">10765</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"rows"</span>: [</span><br><span class="line">     ... Endpoint data is here</span><br><span class="line">  ],</span><br><span class="line">  <span class="attr">"count"</span>: <span class="number">10765</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>参数说明：</p>
 <ul>
 <li><strong>count</strong>：符合查询条件的总记录数。客户端根据<code>offset</code>和<code>count</code>判断是否已经滚动到列表尾部。</li>
@@ -863,7 +1000,7 @@
 </ul>
 </li>
 </ul>
-<h2 id="HTTP-Response"><a href="#HTTP-Response" class="headerlink" title="HTTP Response"></a>HTTP Response</h2><figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="attr">"code"</span>: <span class="number">0</span>,</div><div class="line">    <span class="attr">"result"</span>: &#123;</div><div class="line">        <span class="attr">"rows"</span>: [</div><div class="line">            //<span class="string">"... Endpoint data is here"</span></div><div class="line">        ],</div><div class="line">        <span class="attr">"paging"</span>: &#123;</div><div class="line">            <span class="attr">"cursors"</span>: &#123;</div><div class="line">                <span class="attr">"top"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span> or <span class="string">"19"</span>,</div><div class="line">                <span class="attr">"last"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span> or <span class="string">"19"</span></div><div class="line">            &#125;,</div><div class="line">            <span class="attr">"previous"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span> or <span class="string">"19"</span>,</div><div class="line">            <span class="attr">"next"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span> or <span class="string">"19"</span>,</div><div class="line">            <span class="attr">"count"</span>: <span class="number">1087</span></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="HTTP-Response"><a href="#HTTP-Response" class="headerlink" title="HTTP Response"></a>HTTP Response</h2><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"code"</span>: <span class="number">0</span>,</span><br><span class="line">    <span class="attr">"result"</span>: &#123;</span><br><span class="line">        <span class="attr">"rows"</span>: [</span><br><span class="line">            //<span class="string">"... Endpoint data is here"</span></span><br><span class="line">        ],</span><br><span class="line">        <span class="attr">"paging"</span>: &#123;</span><br><span class="line">            <span class="attr">"cursors"</span>: &#123;</span><br><span class="line">                <span class="attr">"top"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span> or <span class="string">"19"</span>,</span><br><span class="line">                <span class="attr">"last"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span> or <span class="string">"19"</span></span><br><span class="line">            &#125;,</span><br><span class="line">            <span class="attr">"previous"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span> or <span class="string">"19"</span>,</span><br><span class="line">            <span class="attr">"next"</span>: <span class="string">"MTAxNTExOTQ1MjAwNzI5NDE="</span> or <span class="string">"19"</span>,</span><br><span class="line">            <span class="attr">"count"</span>: <span class="number">1087</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <ul>
 <li><code>paging.cursors.top</code>: 必填项；字符串或者null；指向已返回的数据页面开头的游标</li>
 <li><code>paging.cursors.last</code>: 必填项；字符串或者null；指向已返回的数据页面末尾的游标</li>
@@ -877,7 +1014,7 @@
 </li>
 </ul>
 <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
-<li><a href="https://dev.twitter.com/rest/reference/get/statuses/user_timeline" target="_blank" rel="external">twitter API - GET statuses/user_timeline</a></li>
+<li><a href="https://dev.twitter.com/rest/reference/get/statuses/user_timeline" target="_blank" rel="noopener">twitter API - GET statuses/user_timeline</a></li>
 </ul>
 
           
@@ -1019,9 +1156,9 @@
 <li>客户端程序启动时从所有的MongoDB Cluster中加载元数据</li>
 </ul>
 <h1 id="Feed-DB的结构"><a href="#Feed-DB的结构" class="headerlink" title="Feed DB的结构"></a>Feed DB的结构</h1><p><code>metadata</code>集合</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="attr">"_id"</span>: <span class="string">"cluster_1"</span>,</div><div class="line">    <span class="attr">"name"</span>: <span class="string">"cluster_1"</span>,</div><div class="line">    <span class="attr">"start_date"</span>: new Date(<span class="string">"2016-05-01"</span>),</div><div class="line">    <span class="attr">"end_date"</span>: new Date(<span class="string">"2016-08-01"</span>),</div><div class="line">    <span class="attr">"creator_name"</span>: <span class="string">"ethan"</span>,</div><div class="line">    <span class="attr">"created_at"</span>: new Date(<span class="string">"2016-05-01 00:00:00"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"_id"</span>: <span class="string">"cluster_1"</span>,</span><br><span class="line">    <span class="attr">"name"</span>: <span class="string">"cluster_1"</span>,</span><br><span class="line">    <span class="attr">"start_date"</span>: new Date(<span class="string">"2016-05-01"</span>),</span><br><span class="line">    <span class="attr">"end_date"</span>: new Date(<span class="string">"2016-08-01"</span>),</span><br><span class="line">    <span class="attr">"creator_name"</span>: <span class="string">"ethan"</span>,</span><br><span class="line">    <span class="attr">"created_at"</span>: new Date(<span class="string">"2016-05-01 00:00:00"</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p><code>feed</code>集合</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="attr">"_id"</span>: ObjectId(<span class="string">""</span>),</div><div class="line">    <span class="attr">"data_key"</span>: <span class="string">"e6755cfae343b6719cc2121e888b0a41"</span>,</div><div class="line">    <span class="attr">"receiver_id"</span>: <span class="number">1000386</span>,</div><div class="line">    <span class="attr">"sender_id"</span>: <span class="number">1000765</span>,</div><div class="line">    <span class="attr">"event_time"</span>: new Date(<span class="string">"2016-05-01 10:00:00"</span>),</div><div class="line">    <span class="attr">"type"</span>: <span class="number">1</span>,</div><div class="line">    <span class="attr">"data"</span>: &#123;</div><div class="line">        <span class="attr">"fabula_id"</span>: <span class="number">1000983</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"_id"</span>: ObjectId(<span class="string">""</span>),</span><br><span class="line">    <span class="attr">"data_key"</span>: <span class="string">"e6755cfae343b6719cc2121e888b0a41"</span>,</span><br><span class="line">    <span class="attr">"receiver_id"</span>: <span class="number">1000386</span>,</span><br><span class="line">    <span class="attr">"sender_id"</span>: <span class="number">1000765</span>,</span><br><span class="line">    <span class="attr">"event_time"</span>: new Date(<span class="string">"2016-05-01 10:00:00"</span>),</span><br><span class="line">    <span class="attr">"type"</span>: <span class="number">1</span>,</span><br><span class="line">    <span class="attr">"data"</span>: &#123;</span><br><span class="line">        <span class="attr">"fabula_id"</span>: <span class="number">1000983</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p><code>feed.data_key</code>用于根据业务对象查找对应<code>feed</code>记录的标识，主要用于删除场景，生成算法如下：</p>
 <ul>
 <li><code>feed.data_key = MMH3Hash(&quot;fabula_&quot; + $fabulaId)</code></li>
@@ -1029,19 +1166,19 @@
 <p><code>feed._id</code>的生成算法：</p>
 <ul>
 <li>同<code>ObjectID</code>的生成算法，包含<code>time</code>, <code>machine identifier</code>, <code>process id</code>, <code>counter</code>四部分，使用<code>feed.event_time</code>作为第一部分</li>
-<li><code>ObjectID</code>生成算法参考: <a href="https://github.com/go-mgo/mgo/blob/v2/bson/bson.go" target="_blank" rel="external">https://github.com/go-mgo/mgo/blob/v2/bson/bson.go</a></li>
+<li><code>ObjectID</code>生成算法参考: <a href="https://github.com/go-mgo/mgo/blob/v2/bson/bson.go" target="_blank" rel="noopener">https://github.com/go-mgo/mgo/blob/v2/bson/bson.go</a></li>
 </ul>
 <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
-<li><a href="http://mp.weixin.qq.com/s?__biz=MzA5Nzc4OTA1Mw==&amp;mid=2659597071&amp;idx=1&amp;sn=cd8df9f8c52dfbfb54e65adbe19fae27&amp;scene=0#wechat_redirect" target="_blank" rel="external">陌陌：日请求量过亿，谈陌陌的Feed服务优化之路</a></li>
-<li><a href="http://www.tuicool.com/articles/BJRJja" target="_blank" rel="external">几个大型网站的Feeds(Timeline)设计简单对比</a></li>
-<li><a href="http://www.infoq.com/cn/presentations/feed-stream-architecture-in-big-data-era" target="_blank" rel="external">新浪微博：大数据时代的feed流架构</a></li>
-<li><a href="http://itindex.net/detail/52175-feed-%E6%9E%B6%E6%9E%84" target="_blank" rel="external">新浪微博：Feed架构-我们做错了什么</a></li>
-<li><a href="http://timyang.net/data/feed-message-queue/" target="_blank" rel="external">新浪微博：Feed消息队列架构分析</a></li>
-<li><a href="http://ju.outofmemory.cn/entry/223817" target="_blank" rel="external">Pinterest：Pinterest的Feed架构与算法</a></li>
-<li><a href="https://engineering.pinterest.com/blog/building-smarter-home-feed" target="_blank" rel="external">Pinterest：Building a smarter home feed</a></li>
-<li><a href="https://engineering.pinterest.com/blog/building-scalable-and-available-home-feed" target="_blank" rel="external">Pinterest：Building a scalable and available home feed</a></li>
-<li><a href="https://mp.weixin.qq.com/s?__biz=MzA4OTk5OTQzMg==&amp;mid=2449231037&amp;idx=1&amp;sn=c2fc8a7d2832ea109e2abe4b773ff1f5&amp;scene=1&amp;srcid=0509fzQ02Jubcqnw7WPzp6IO" target="_blank" rel="external">Pinterest：Pinterest 的 Smart Feed 架构与算法</a></li>
-<li><a href="https://engineering.pinterest.com/blog/pinnability-machine-learning-home-feed" target="_blank" rel="external">Pinterest：Pinnability: Machine learning in the home feed</a></li>
+<li><a href="http://mp.weixin.qq.com/s?__biz=MzA5Nzc4OTA1Mw==&amp;mid=2659597071&amp;idx=1&amp;sn=cd8df9f8c52dfbfb54e65adbe19fae27&amp;scene=0#wechat_redirect" target="_blank" rel="noopener">陌陌：日请求量过亿，谈陌陌的Feed服务优化之路</a></li>
+<li><a href="http://www.tuicool.com/articles/BJRJja" target="_blank" rel="noopener">几个大型网站的Feeds(Timeline)设计简单对比</a></li>
+<li><a href="http://www.infoq.com/cn/presentations/feed-stream-architecture-in-big-data-era" target="_blank" rel="noopener">新浪微博：大数据时代的feed流架构</a></li>
+<li><a href="http://itindex.net/detail/52175-feed-%E6%9E%B6%E6%9E%84" target="_blank" rel="noopener">新浪微博：Feed架构-我们做错了什么</a></li>
+<li><a href="http://timyang.net/data/feed-message-queue/" target="_blank" rel="noopener">新浪微博：Feed消息队列架构分析</a></li>
+<li><a href="http://ju.outofmemory.cn/entry/223817" target="_blank" rel="noopener">Pinterest：Pinterest的Feed架构与算法</a></li>
+<li><a href="https://engineering.pinterest.com/blog/building-smarter-home-feed" target="_blank" rel="noopener">Pinterest：Building a smarter home feed</a></li>
+<li><a href="https://engineering.pinterest.com/blog/building-scalable-and-available-home-feed" target="_blank" rel="noopener">Pinterest：Building a scalable and available home feed</a></li>
+<li><a href="https://mp.weixin.qq.com/s?__biz=MzA4OTk5OTQzMg==&amp;mid=2449231037&amp;idx=1&amp;sn=c2fc8a7d2832ea109e2abe4b773ff1f5&amp;scene=1&amp;srcid=0509fzQ02Jubcqnw7WPzp6IO" target="_blank" rel="noopener">Pinterest：Pinterest 的 Smart Feed 架构与算法</a></li>
+<li><a href="https://engineering.pinterest.com/blog/pinnability-machine-learning-home-feed" target="_blank" rel="noopener">Pinterest：Pinnability: Machine learning in the home feed</a></li>
 </ul>
 
           
@@ -1175,12 +1312,12 @@
 </ul>
 </li>
 <li><p>Pin a specific version of MongoDB</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-server hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-shell hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-mongos hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-tools hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-server hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-shell hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-mongos hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-tools hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>修改MongoDB的配置文件<code>/etc/mongod.conf</code></p>
 <ul>
 <li>修改<code>net.bindIp</code>为<code>0.0.0.0</code></li>
-<li>增加配置<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="attr">storage:</span></div><div class="line"><span class="attr">  directoryPerDB:</span> <span class="literal">true</span></div></pre></td></tr></table></figure>
+<li>增加配置<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">storage:</span></span><br><span class="line"><span class="attr">  directoryPerDB:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 </li>
@@ -1190,16 +1327,16 @@
 <li><code>mongo</code></li>
 </ul>
 </li>
-<li><p>Disable Transparent Huge Pages，参考<a href="https://docs.mongodb.com/manual/tutorial/transparent-huge-pages/" target="_blank" rel="external">这里</a></p>
+<li><p>Disable Transparent Huge Pages，参考<a href="https://docs.mongodb.com/manual/tutorial/transparent-huge-pages/" target="_blank" rel="noopener">这里</a></p>
 <ul>
 <li><p>Create the init.d script</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#!/bin/sh</span></div><div class="line"><span class="comment">### BEGIN INIT INFO</span></div><div class="line"><span class="comment"># Provides:          disable-transparent-hugepages</span></div><div class="line"><span class="comment"># Required-Start:    $local_fs</span></div><div class="line"><span class="comment"># Required-Stop:</span></div><div class="line"><span class="comment"># X-Start-Before:    mongod mongodb-mms-automation-agent</span></div><div class="line"><span class="comment"># Default-Start:     2 3 4 5</span></div><div class="line"><span class="comment"># Default-Stop:      0 1 6</span></div><div class="line"><span class="comment"># Short-Description: Disable Linux transparent huge pages</span></div><div class="line"><span class="comment"># Description:       Disable Linux transparent huge pages, to improve</span></div><div class="line"><span class="comment">#                    database performance.</span></div><div class="line"><span class="comment">### END INIT INFO</span></div><div class="line"></div><div class="line"><span class="keyword">case</span> <span class="variable">$1</span> <span class="keyword">in</span></div><div class="line">  start)</div><div class="line">    <span class="keyword">if</span> [ -d /sys/kernel/mm/transparent_hugepage ]; <span class="keyword">then</span></div><div class="line">      thp_path=/sys/kernel/mm/transparent_hugepage</div><div class="line">    <span class="keyword">elif</span> [ -d /sys/kernel/mm/redhat_transparent_hugepage ]; <span class="keyword">then</span></div><div class="line">      thp_path=/sys/kernel/mm/redhat_transparent_hugepage</div><div class="line">    <span class="keyword">else</span></div><div class="line">      <span class="built_in">return</span> 0</div><div class="line">    <span class="keyword">fi</span></div><div class="line"></div><div class="line">    <span class="built_in">echo</span> <span class="string">'never'</span> &gt; <span class="variable">$&#123;thp_path&#125;</span>/enabled</div><div class="line">    <span class="built_in">echo</span> <span class="string">'never'</span> &gt; <span class="variable">$&#123;thp_path&#125;</span>/defrag</div><div class="line"></div><div class="line">    <span class="built_in">unset</span> thp_path</div><div class="line">    ;;</div><div class="line"><span class="keyword">esac</span></div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"><span class="comment">### BEGIN INIT INFO</span></span><br><span class="line"><span class="comment"># Provides:          disable-transparent-hugepages</span></span><br><span class="line"><span class="comment"># Required-Start:    $local_fs</span></span><br><span class="line"><span class="comment"># Required-Stop:</span></span><br><span class="line"><span class="comment"># X-Start-Before:    mongod mongodb-mms-automation-agent</span></span><br><span class="line"><span class="comment"># Default-Start:     2 3 4 5</span></span><br><span class="line"><span class="comment"># Default-Stop:      0 1 6</span></span><br><span class="line"><span class="comment"># Short-Description: Disable Linux transparent huge pages</span></span><br><span class="line"><span class="comment"># Description:       Disable Linux transparent huge pages, to improve</span></span><br><span class="line"><span class="comment">#                    database performance.</span></span><br><span class="line"><span class="comment">### END INIT INFO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">case</span> <span class="variable">$1</span> <span class="keyword">in</span></span><br><span class="line">  start)</span><br><span class="line">    <span class="keyword">if</span> [ -d /sys/kernel/mm/transparent_hugepage ]; <span class="keyword">then</span></span><br><span class="line">      thp_path=/sys/kernel/mm/transparent_hugepage</span><br><span class="line">    <span class="keyword">elif</span> [ -d /sys/kernel/mm/redhat_transparent_hugepage ]; <span class="keyword">then</span></span><br><span class="line">      thp_path=/sys/kernel/mm/redhat_transparent_hugepage</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">      <span class="built_in">return</span> 0</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">'never'</span> &gt; <span class="variable">$&#123;thp_path&#125;</span>/enabled</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">'never'</span> &gt; <span class="variable">$&#123;thp_path&#125;</span>/defrag</span><br><span class="line"></span><br><span class="line">    <span class="built_in">unset</span> thp_path</span><br><span class="line">    ;;</span><br><span class="line"><span class="keyword">esac</span></span><br></pre></td></tr></table></figure>
 </li>
 <li><p>Make it executable</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo chmod 755 /etc/init.d/<span class="built_in">disable</span>-transparent-hugepages</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo chmod 755 /etc/init.d/<span class="built_in">disable</span>-transparent-hugepages</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>Configure your operating system to run it on boot</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo update-rc.d <span class="built_in">disable</span>-transparent-hugepages defaults</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo update-rc.d <span class="built_in">disable</span>-transparent-hugepages defaults</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>重启OS</p>
 </li>
@@ -1215,7 +1352,7 @@
 <li>准备2台高配ec2（假设为A、B）和1台低配ec2（假设为C）</li>
 <li>在A、B、C上参考上一节的步骤安装MongoDB</li>
 <li><p>在A的Shell中执行<code>mongo</code>命令，然后创建超级管理员</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">$ mongo</div><div class="line">&gt; admin = db.getSiblingDB(<span class="string">"admin"</span>);</div><div class="line">&gt; admin.createUser(&#123; <span class="attr">user</span>: <span class="string">"ethan"</span>, <span class="attr">pwd</span>: <span class="string">"&#123;ethan的密码&#125;"</span>, <span class="attr">roles</span>: [&#123; <span class="attr">role</span>: <span class="string">"root"</span>, <span class="attr">db</span>: <span class="string">"admin"</span> &#125;] &#125;);</div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ mongo</span><br><span class="line">&gt; admin = db.getSiblingDB(<span class="string">"admin"</span>);</span><br><span class="line">&gt; admin.createUser(&#123; <span class="attr">user</span>: <span class="string">"ethan"</span>, <span class="attr">pwd</span>: <span class="string">"&#123;ethan的密码&#125;"</span>, <span class="attr">roles</span>: [&#123; <span class="attr">role</span>: <span class="string">"root"</span>, <span class="attr">db</span>: <span class="string">"admin"</span> &#125;] &#125;);</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>准备keyfile</p>
 <ul>
@@ -1233,17 +1370,17 @@
 </li>
 <li><p>修改A、B的配置文件<code>/etc/mongod.conf</code></p>
 <ul>
-<li>增加配置<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="attr">security:</span></div><div class="line"><span class="attr">  keyFile:</span> <span class="string">"/etc/rs0.key"</span></div><div class="line"><span class="attr">  authorization:</span> <span class="string">enabled</span></div><div class="line"></div><div class="line"><span class="attr">replication:</span></div><div class="line"><span class="attr">  replSetName:</span> <span class="string">rs0</span></div></pre></td></tr></table></figure>
+<li>增加配置<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">security:</span></span><br><span class="line"><span class="attr">  keyFile:</span> <span class="string">"/etc/rs0.key"</span></span><br><span class="line"><span class="attr">  authorization:</span> <span class="string">enabled</span></span><br><span class="line"></span><br><span class="line"><span class="attr">replication:</span></span><br><span class="line"><span class="attr">  replSetName:</span> <span class="string">rs0</span></span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 </li>
 <li><p>修改C的配置文件<code>/etc/mongod.conf</code></p>
 <ul>
 <li><p>增加配置</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="attr">security:</span></div><div class="line"><span class="attr">  keyFile:</span> <span class="string">"/etc/rs0.key"</span></div><div class="line"><span class="attr">  authorization:</span> <span class="string">enabled</span></div><div class="line"></div><div class="line"><span class="attr">replication:</span></div><div class="line"><span class="attr">  replSetName:</span> <span class="string">rs0</span></div></pre></td></tr></table></figure>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">security:</span></span><br><span class="line"><span class="attr">  keyFile:</span> <span class="string">"/etc/rs0.key"</span></span><br><span class="line"><span class="attr">  authorization:</span> <span class="string">enabled</span></span><br><span class="line"></span><br><span class="line"><span class="attr">replication:</span></span><br><span class="line"><span class="attr">  replSetName:</span> <span class="string">rs0</span></span><br></pre></td></tr></table></figure>
 </li>
 <li><p>修改配置</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="attr">storage:</span></div><div class="line"><span class="attr">  journal:</span></div><div class="line"><span class="attr">    enabled:</span> <span class="literal">false</span></div></pre></td></tr></table></figure>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">storage:</span></span><br><span class="line"><span class="attr">  journal:</span></span><br><span class="line"><span class="attr">    enabled:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 </li>
@@ -1252,29 +1389,29 @@
 <li><p>配置集群</p>
 <ul>
 <li><p>连接A上的<code>mongod</code>实例</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ mongo -u ethan -p &#123;ethan的密码&#125; --authenticationDatabase admin</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ mongo -u ethan -p &#123;ethan的密码&#125; --authenticationDatabase admin</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>通过下面的命令配置ReplicaSet：</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">&gt; rs.initiate()</div><div class="line">&gt; cfg = rs.conf()</div><div class="line">&gt; cfg.members[<span class="number">0</span>].host = <span class="string">"&#123;A的IP&#125;:27017"</span></div><div class="line">&gt; rs.reconfig(cfg)</div><div class="line">&gt; rs.add(<span class="string">"&#123;B的IP&#125;"</span>)</div><div class="line">&gt; rs.addArb(<span class="string">"&#123;C的IP&#125;"</span>)</div><div class="line"></div><div class="line"><span class="comment">// 等待几秒...</span></div><div class="line">&gt; rs.status()  <span class="comment">// 检查副本集状态</span></div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&gt; rs.initiate()</span><br><span class="line">&gt; cfg = rs.conf()</span><br><span class="line">&gt; cfg.members[<span class="number">0</span>].host = <span class="string">"&#123;A的IP&#125;:27017"</span></span><br><span class="line">&gt; rs.reconfig(cfg)</span><br><span class="line">&gt; rs.add(<span class="string">"&#123;B的IP&#125;"</span>)</span><br><span class="line">&gt; rs.addArb(<span class="string">"&#123;C的IP&#125;"</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等待几秒...</span></span><br><span class="line">&gt; rs.status()  <span class="comment">// 检查副本集状态</span></span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 </li>
 <li><p>为副本集客户端创建访问账户</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&gt; use &#123;dbname&#125;;</div><div class="line">&gt; db.createUser(&#123; <span class="attr">user</span>: <span class="string">"&#123;账户名&#125;"</span>, <span class="attr">pwd</span>: <span class="string">"&#123;账户密码&#125;"</span>, <span class="attr">roles</span>: [&#123; <span class="attr">role</span>: <span class="string">"readWrite"</span>, <span class="attr">db</span>: <span class="string">"&#123;dbname&#125;"</span> &#125;] &#125;);</div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt; use &#123;dbname&#125;;</span><br><span class="line">&gt; db.createUser(&#123; <span class="attr">user</span>: <span class="string">"&#123;账户名&#125;"</span>, <span class="attr">pwd</span>: <span class="string">"&#123;账户密码&#125;"</span>, <span class="attr">roles</span>: [&#123; <span class="attr">role</span>: <span class="string">"readWrite"</span>, <span class="attr">db</span>: <span class="string">"&#123;dbname&#125;"</span> &#125;] &#125;);</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
-<li><a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/" target="_blank" rel="external">Install MongoDB on Ubuntu</a>， 注意：<ul>
+<li><a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/" target="_blank" rel="noopener">Install MongoDB on Ubuntu</a>， 注意：<ul>
 <li>安装过程需要指定MongoDB的安装版本</li>
 <li>锁定MongoDB的安装版本，避免执行<code>apt-get</code>升级命令的时候连带升级MongoDB</li>
 </ul>
 </li>
-<li><a href="https://docs.mongodb.com/manual/tutorial/enforce-keyfile-access-control-in-existing-replica-set/" target="_blank" rel="external">Enforce Keyfile Access Control in a Replica Set</a><ul>
+<li><a href="https://docs.mongodb.com/manual/tutorial/enforce-keyfile-access-control-in-existing-replica-set/" target="_blank" rel="noopener">Enforce Keyfile Access Control in a Replica Set</a><ul>
 <li>Security between members of the replica set using Internal Authentication</li>
 <li>Security between connecting clients and the replica set using User Access Controls</li>
 </ul>
 </li>
-<li><a href="https://docs.mongodb.com/manual/reference/configuration-options/#core-options" target="_blank" rel="external">MongoDB configuration file options</a></li>
+<li><a href="https://docs.mongodb.com/manual/reference/configuration-options/#core-options" target="_blank" rel="noopener">MongoDB configuration file options</a></li>
 </ul>
 
           
@@ -1392,7 +1529,7 @@
           
             <p><em>持续补充中…</em></p>
 <h1 id="安全-Security"><a href="#安全-Security" class="headerlink" title="安全(Security)"></a>安全(Security)</h1><ul>
-<li><strong>已读</strong> <a href="https://www.usenix.org/system/files/conference/woot14/woot14-ghena.pdf" target="_blank" rel="external">Green Lights Forever: Analyzing the Security of Traffic Infrastructure</a>：密歇根大学团队在这篇文章中介绍了，如何利用无限网络安全漏洞为入口攻破交通信号灯系统。并总结出嵌入式系统在新环境下防御攻击的方法。对于发现和解决其它类型的嵌入式系统的安全问题，也十分有参考意义。</li>
+<li><strong>已读</strong> <a href="https://www.usenix.org/system/files/conference/woot14/woot14-ghena.pdf" target="_blank" rel="noopener">Green Lights Forever: Analyzing the Security of Traffic Infrastructure</a>：密歇根大学团队在这篇文章中介绍了，如何利用无限网络安全漏洞为入口攻破交通信号灯系统。并总结出嵌入式系统在新环境下防御攻击的方法。对于发现和解决其它类型的嵌入式系统的安全问题，也十分有参考意义。</li>
 </ul>
 
           
@@ -1508,20 +1645,20 @@
       
         
           
-            <img src="/2016/08/06/configure-smallest-elasticsearch-cluster/es-cluster.jpg" alt="es-cluster.jpg" title="">
+            <img src="/2016/08/06/configure-smallest-elasticsearch-cluster/es-cluster.jpg">
 <h1 id="安装版本"><a href="#安装版本" class="headerlink" title="安装版本"></a>安装版本</h1><p>Elasticsearch（通过<code>apt</code>方式安装）:</p>
 <ul>
 <li>Elasticsearch 2.3.2</li>
 </ul>
 <p>Jar插件:</p>
 <ul>
-<li><a href="https://github.com/medcl/elasticsearch-analysis-ik" target="_blank" rel="external">elasticsearch-analysis-ik</a>: 1.9.2</li>
-<li><a href="https://github.com/medcl/elasticsearch-analysis-pinyin" target="_blank" rel="external">elasticsearch-analysis-pinyin</a>: 1.7.2</li>
-<li><a href="https://github.com/medcl/elasticsearch-analysis-stconvert" target="_blank" rel="external">elasticsearch-analysis-stconvert</a>: 1.8.2</li>
+<li><a href="https://github.com/medcl/elasticsearch-analysis-ik" target="_blank" rel="noopener">elasticsearch-analysis-ik</a>: 1.9.2</li>
+<li><a href="https://github.com/medcl/elasticsearch-analysis-pinyin" target="_blank" rel="noopener">elasticsearch-analysis-pinyin</a>: 1.7.2</li>
+<li><a href="https://github.com/medcl/elasticsearch-analysis-stconvert" target="_blank" rel="noopener">elasticsearch-analysis-stconvert</a>: 1.8.2</li>
 </ul>
 <p>Site插件:</p>
 <ul>
-<li><a href="https://github.com/mobz/elasticsearch-head" target="_blank" rel="external">elasticsearch-head</a>: 最新版</li>
+<li><a href="https://github.com/mobz/elasticsearch-head" target="_blank" rel="noopener">elasticsearch-head</a>: 最新版</li>
 </ul>
 <h1 id="各节点服务器"><a href="#各节点服务器" class="headerlink" title="各节点服务器"></a>各节点服务器</h1><ul>
 <li>Node1<ul>
@@ -1569,19 +1706,19 @@
 <ul>
 <li>Node 1</li>
 </ul>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="string">cluster.name:</span> <span class="string">search-1</span></div><div class="line"><span class="string">node.name:</span> <span class="string">node-1</span></div><div class="line"></div><div class="line"><span class="string">node.master:</span> <span class="literal">true</span></div><div class="line"><span class="string">node.data:</span> <span class="literal">true</span></div><div class="line"></div><div class="line"><span class="string">index.number_of_shards:</span> <span class="number">3</span></div><div class="line"><span class="string">index.number_of_replicas:</span> <span class="number">1</span></div><div class="line"></div><div class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>                           <span class="comment"># 绑定本机所有端口</span></div><div class="line"></div><div class="line"><span class="string">discovery.zen.ping.multicast.enabled:</span> <span class="literal">false</span>     <span class="comment"># 禁止多播</span></div><div class="line"><span class="string">discovery.zen.minimum_master_nodes:</span> <span class="number">2</span>           <span class="comment"># 配置最少节点数量，防止脑裂</span></div><div class="line"><span class="string">discovery.zen.ping.unicast.hosts:</span> <span class="string">['192.168.31.171',</span> <span class="string">'192.168.31.221'</span><span class="string">,</span> <span class="string">'192.168.31.154'</span><span class="string">]</span></div></pre></td></tr></table></figure>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">cluster.name:</span> <span class="string">search-1</span></span><br><span class="line"><span class="string">node.name:</span> <span class="string">node-1</span></span><br><span class="line"></span><br><span class="line"><span class="string">node.master:</span> <span class="literal">true</span></span><br><span class="line"><span class="string">node.data:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="string">index.number_of_shards:</span> <span class="number">3</span></span><br><span class="line"><span class="string">index.number_of_replicas:</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>                           <span class="comment"># 绑定本机所有端口</span></span><br><span class="line"></span><br><span class="line"><span class="string">discovery.zen.ping.multicast.enabled:</span> <span class="literal">false</span>     <span class="comment"># 禁止多播</span></span><br><span class="line"><span class="string">discovery.zen.minimum_master_nodes:</span> <span class="number">2</span>           <span class="comment"># 配置最少节点数量，防止脑裂</span></span><br><span class="line"><span class="string">discovery.zen.ping.unicast.hosts:</span> <span class="string">['192.168.31.171',</span> <span class="string">'192.168.31.221'</span><span class="string">,</span> <span class="string">'192.168.31.154'</span><span class="string">]</span></span><br></pre></td></tr></table></figure>
 <ul>
 <li>Node 2</li>
 </ul>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="string">cluster.name:</span> <span class="string">search-1</span></div><div class="line"><span class="string">node.name:</span> <span class="string">node-2</span></div><div class="line"></div><div class="line"><span class="string">node.master:</span> <span class="literal">true</span></div><div class="line"><span class="string">node.data:</span> <span class="literal">true</span></div><div class="line"></div><div class="line"><span class="string">index.number_of_shards:</span> <span class="number">3</span></div><div class="line"><span class="string">index.number_of_replicas:</span> <span class="number">1</span></div><div class="line"></div><div class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>                           <span class="comment"># 绑定本机所有端口</span></div><div class="line"></div><div class="line"><span class="string">discovery.zen.ping.multicast.enabled:</span> <span class="literal">false</span>     <span class="comment"># 禁止多播</span></div><div class="line"><span class="string">discovery.zen.minimum_master_nodes:</span> <span class="number">2</span>           <span class="comment"># 配置最少节点数量，防止脑裂</span></div><div class="line"><span class="string">discovery.zen.ping.unicast.hosts:</span> <span class="string">['192.168.31.171',</span> <span class="string">'192.168.31.221'</span><span class="string">,</span> <span class="string">'192.168.31.154'</span><span class="string">]</span></div></pre></td></tr></table></figure>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">cluster.name:</span> <span class="string">search-1</span></span><br><span class="line"><span class="string">node.name:</span> <span class="string">node-2</span></span><br><span class="line"></span><br><span class="line"><span class="string">node.master:</span> <span class="literal">true</span></span><br><span class="line"><span class="string">node.data:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="string">index.number_of_shards:</span> <span class="number">3</span></span><br><span class="line"><span class="string">index.number_of_replicas:</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>                           <span class="comment"># 绑定本机所有端口</span></span><br><span class="line"></span><br><span class="line"><span class="string">discovery.zen.ping.multicast.enabled:</span> <span class="literal">false</span>     <span class="comment"># 禁止多播</span></span><br><span class="line"><span class="string">discovery.zen.minimum_master_nodes:</span> <span class="number">2</span>           <span class="comment"># 配置最少节点数量，防止脑裂</span></span><br><span class="line"><span class="string">discovery.zen.ping.unicast.hosts:</span> <span class="string">['192.168.31.171',</span> <span class="string">'192.168.31.221'</span><span class="string">,</span> <span class="string">'192.168.31.154'</span><span class="string">]</span></span><br></pre></td></tr></table></figure>
 <ul>
 <li>Node 3</li>
 </ul>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="string">cluster.name:</span> <span class="string">search-1</span></div><div class="line"><span class="string">node.name:</span> <span class="string">node-3</span></div><div class="line"></div><div class="line"><span class="string">node.master:</span> <span class="literal">true</span></div><div class="line"><span class="string">node.data:</span> <span class="literal">true</span></div><div class="line"></div><div class="line"><span class="string">index.number_of_shards:</span> <span class="number">3</span></div><div class="line"><span class="string">index.number_of_replicas:</span> <span class="number">1</span></div><div class="line"></div><div class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>                           <span class="comment"># 绑定本机所有端口</span></div><div class="line"></div><div class="line"><span class="string">discovery.zen.ping.multicast.enabled:</span> <span class="literal">false</span>     <span class="comment"># 禁止多播</span></div><div class="line"><span class="string">discovery.zen.minimum_master_nodes:</span> <span class="number">2</span>           <span class="comment"># 配置最少节点数量，防止脑裂</span></div><div class="line"><span class="string">discovery.zen.ping.unicast.hosts:</span> <span class="string">['192.168.31.171',</span> <span class="string">'192.168.31.221'</span><span class="string">,</span> <span class="string">'192.168.31.154'</span><span class="string">]</span></div></pre></td></tr></table></figure>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">cluster.name:</span> <span class="string">search-1</span></span><br><span class="line"><span class="string">node.name:</span> <span class="string">node-3</span></span><br><span class="line"></span><br><span class="line"><span class="string">node.master:</span> <span class="literal">true</span></span><br><span class="line"><span class="string">node.data:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="string">index.number_of_shards:</span> <span class="number">3</span></span><br><span class="line"><span class="string">index.number_of_replicas:</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>                           <span class="comment"># 绑定本机所有端口</span></span><br><span class="line"></span><br><span class="line"><span class="string">discovery.zen.ping.multicast.enabled:</span> <span class="literal">false</span>     <span class="comment"># 禁止多播</span></span><br><span class="line"><span class="string">discovery.zen.minimum_master_nodes:</span> <span class="number">2</span>           <span class="comment"># 配置最少节点数量，防止脑裂</span></span><br><span class="line"><span class="string">discovery.zen.ping.unicast.hosts:</span> <span class="string">['192.168.31.171',</span> <span class="string">'192.168.31.221'</span><span class="string">,</span> <span class="string">'192.168.31.154'</span><span class="string">]</span></span><br></pre></td></tr></table></figure>
 <h1 id="常用操作"><a href="#常用操作" class="headerlink" title="常用操作"></a>常用操作</h1><p>上传插件</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-ik-1.9.2 ubuntu@192.168.31.171:~/</div><div class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-pinyin-1.7.2 ubuntu@192.168.31.171:~/</div><div class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-stconvert-1.8.2 ubuntu@192.168.31.171:~/</div><div class="line"></div><div class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-ik-1.9.2 ubuntu@192.168.31.221:~/</div><div class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-pinyin-1.7.2 ubuntu@192.168.31.221:~/</div><div class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-stconvert-1.8.2 ubuntu@192.168.31.221:~/</div><div class="line"></div><div class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-ik-1.9.2 ubuntu@192.168.31.154:~/</div><div class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-pinyin-1.7.2 ubuntu@192.168.31.154:~/</div><div class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-stconvert-1.8.2 ubuntu@192.168.31.154:~/</div></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-ik-1.9.2 ubuntu@192.168.31.171:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-pinyin-1.7.2 ubuntu@192.168.31.171:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-stconvert-1.8.2 ubuntu@192.168.31.171:~/</span><br><span class="line"></span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-ik-1.9.2 ubuntu@192.168.31.221:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-pinyin-1.7.2 ubuntu@192.168.31.221:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-stconvert-1.8.2 ubuntu@192.168.31.221:~/</span><br><span class="line"></span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-ik-1.9.2 ubuntu@192.168.31.154:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-pinyin-1.7.2 ubuntu@192.168.31.154:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-stconvert-1.8.2 ubuntu@192.168.31.154:~/</span><br></pre></td></tr></table></figure>
 <p>拷贝插件到<code>/usr/share/elasticsearch/plugins</code>目录</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">$ mv elasticsearch-analysis-ik-1.9.2 /usr/share/elasticsearch/plugins/</div><div class="line">$ mv elasticsearch-analysis-pinyin-1.7.2 /usr/share/elasticsearch/plugins/</div><div class="line">$ mv elasticsearch-analysis-stconvert-1.8.2 /usr/share/elasticsearch/plugins/</div><div class="line"></div><div class="line">$ chown -R elasticsearch:elasticsearch elasticsearch-analysis-ik-1.9.2/             <span class="comment"># 修改插件访问权限，允许elasticsearch服务访问插件</span></div><div class="line">$ chown -R elasticsearch:elasticsearch elasticsearch-analysis-pinyin-1.7.2/         <span class="comment"># 修改插件访问权限，允许elasticsearch服务访问插件</span></div><div class="line">$ chown -R elasticsearch:elasticsearch elasticsearch-analysis-stconvert-1.8.2/      <span class="comment"># 修改插件访问权限，允许elasticsearch服务访问插件</span></div></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ mv elasticsearch-analysis-ik-1.9.2 /usr/share/elasticsearch/plugins/</span><br><span class="line">$ mv elasticsearch-analysis-pinyin-1.7.2 /usr/share/elasticsearch/plugins/</span><br><span class="line">$ mv elasticsearch-analysis-stconvert-1.8.2 /usr/share/elasticsearch/plugins/</span><br><span class="line"></span><br><span class="line">$ chown -R elasticsearch:elasticsearch elasticsearch-analysis-ik-1.9.2/             <span class="comment"># 修改插件访问权限，允许elasticsearch服务访问插件</span></span><br><span class="line">$ chown -R elasticsearch:elasticsearch elasticsearch-analysis-pinyin-1.7.2/         <span class="comment"># 修改插件访问权限，允许elasticsearch服务访问插件</span></span><br><span class="line">$ chown -R elasticsearch:elasticsearch elasticsearch-analysis-stconvert-1.8.2/      <span class="comment"># 修改插件访问权限，允许elasticsearch服务访问插件</span></span><br></pre></td></tr></table></figure>
 
           
         
@@ -1696,8 +1833,8 @@
       
         
           
-            <img src="/2016/08/06/elastic-basic-concepts/Brueghel-tower-of-babel.jpg" alt="Brueghel-tower-of-babel.jpg" title="">
-<p>参考<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/_basic_concepts.html" target="_blank" rel="external">ElasticSearch基础概念</a>:</p>
+            <img src="/2016/08/06/elastic-basic-concepts/Brueghel-tower-of-babel.jpg">
+<p>参考<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/_basic_concepts.html" target="_blank" rel="noopener">ElasticSearch基础概念</a>:</p>
 <h1 id="Near-Realtime"><a href="#Near-Realtime" class="headerlink" title="Near Realtime:"></a><strong>Near Realtime:</strong></h1><p>there is a slight latency (normally one second) from the time you index a document until the time it becomes searchable.</p>
 <h1 id="Cluster"><a href="#Cluster" class="headerlink" title="Cluster"></a><strong>Cluster</strong></h1><p>A cluster is a collection of one or more nodes (servers) that together holds your entire data and provides federated indexing and search capabilities across all nodes. A cluster is identified by a unique name which by default is “elasticsearch”. This name is important because a node can only be part of a cluster if the node is set up to join the cluster by its name.</p>
 <p>Make sure that you don’t reuse the same cluster names in different environments, otherwise you might end up with nodes joining the wrong cluster. For instance you could use logging-dev, logging-stage, and logging-prod for the development, staging, and production clusters.</p>
@@ -1725,345 +1862,6 @@
 </ul>
 <p>To summarize, each index can be split into multiple shards. An index can also be replicated zero (meaning no replicas) or more times. Once replicated, each index will have primary shards (the original shards that were replicated from) and replica shards (the copies of the primary shards). The number of shards and replicas can be defined per index at the time the index is created. After the index is created, you may change the number of replicas dynamically anytime but you cannot change the number shards after-the-fact.</p>
 <p>By default, each index in Elasticsearch is allocated 5 primary shards and 1 replica which means that if you have at least two nodes in your cluster, your index will have 5 primary shards and another 5 replica shards (1 complete replica) for a total of 10 shards per index.</p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/2016/08/06/install-elasticsearch-on-ubuntu-14-04/" itemprop="url">
-                  学习Elasticsearch之2：在Ubuntu 14.04上安装Elasticsearch
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2016-08-06T00:40:48+08:00" content="2016-08-06">
-              2016-08-06
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/软件开发/" itemprop="url" rel="index">
-                    <span itemprop="name">软件开发</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/2016/08/06/install-elasticsearch-on-ubuntu-14-04/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/08/06/install-elasticsearch-on-ubuntu-14-04/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <img src="/2016/08/06/install-elasticsearch-on-ubuntu-14-04/logo-elastic.png" alt="logo-elastic.png" title="">
-<h1 id="Elasticsearch的安装有两种方式"><a href="#Elasticsearch的安装有两种方式" class="headerlink" title="Elasticsearch的安装有两种方式"></a>Elasticsearch的安装有两种方式</h1><ul>
-<li>通过<code>tar.gz</code>压缩包方式安装，参考<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/_installation.html" target="_blank" rel="external">ElasticSearch Reference 2.3 - Installation</a></li>
-<li>通过<code>apt</code>命令安装，参考<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-repositories.html" target="_blank" rel="external">ElasticSearch Reference 2.3 - Repositories</a></li>
-</ul>
-<h2 id="通过tar-gz压缩包安装步骤"><a href="#通过tar-gz压缩包安装步骤" class="headerlink" title="通过tar.gz压缩包安装步骤"></a>通过<code>tar.gz</code>压缩包安装步骤</h2><ul>
-<li>SSH远程连接Ubuntu Server，<code>ssh ethancai@###.###.###.###</code></li>
-<li>下载Elasticsearch<ul>
-<li><code>mkdir ~/Downloads &amp;&amp; cd ~/Downloads &amp;&amp; curl -L -O https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.3.1/elasticsearch-2.3.1.tar.gz</code></li>
-</ul>
-</li>
-<li>解压<ul>
-<li><code>tar -xzvf elasticsearch-2.3.1.tar.gz &amp;&amp; sudo mv elasticsearch-2.3.1 /var/</code></li>
-</ul>
-</li>
-<li>运行<ul>
-<li><code>cd /var/elasticsearch-2.3.1/bin</code></li>
-<li><code>./elasticsearch</code>，或者以指定<code>cluster</code>和<code>node</code>名称的方式运行<code>./elasticsearch --cluster.name my_cluster_name --node.name my_node_name</code></li>
-</ul>
-</li>
-</ul>
-<h2 id="通过apt命令安装"><a href="#通过apt命令安装" class="headerlink" title="通过apt命令安装"></a>通过<code>apt</code>命令安装</h2><ul>
-<li>Download and install the Public Signing Key<ul>
-<li><code>wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -</code></li>
-</ul>
-</li>
-<li>Save the repository definition<ul>
-<li><code>echo &quot;deb http://packages.elastic.co/elasticsearch/2.x/debian stable main&quot; | sudo tee -a /etc/apt/sources.list.d/elasticsearch-2.x.list</code></li>
-</ul>
-</li>
-<li>Install elasticsearch, 注意这里需要指定安装版本<ul>
-<li><code>sudo apt-get update &amp;&amp; sudo apt-get install elasticsearch=2.3.2</code></li>
-</ul>
-</li>
-<li>Configure Elasticsearch to automatically start during bootup<ul>
-<li><code>sudo update-rc.d elasticsearch defaults 95 10</code></li>
-</ul>
-</li>
-</ul>
-<h2 id="验证安装是否成功"><a href="#验证安装是否成功" class="headerlink" title="验证安装是否成功"></a>验证安装是否成功</h2><p>By default, Elasticsearch uses port 9200 to provide access to its REST API. 你可以通过下面命令验证是否启动成功：</p>
-<ul>
-<li><code>curl &#39;localhost:9200/_cat/health?v&#39;</code></li>
-<li><code>curl &#39;localhost:9200/_cat/nodes?v&#39;</code></li>
-<li>验证后记得重启，<code>sudo shutdown -r 0</code></li>
-</ul>
-<h1 id="默认目录"><a href="#默认目录" class="headerlink" title="默认目录"></a>默认目录</h1><p>不同安装方式，默认的目录位置不一样，参考<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-dir-layout.html" target="_blank" rel="external">ElasticSearch Reference 2.3 - Directory Layout</a></p>
-<p>通过<code>tar.gz</code>方式安装的默认目录如下:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align:left">Type</th>
-<th style="text-align:left">Description</th>
-<th style="text-align:left">Location Debian/Ubuntu</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">home</td>
-<td style="text-align:left">Home of elasticsearch installation.</td>
-<td style="text-align:left"><code>{extract.path}</code></td>
-</tr>
-<tr>
-<td style="text-align:left">bin</td>
-<td style="text-align:left">Binary scripts including elasticsearch to start a node.</td>
-<td style="text-align:left"><code>{extract.path}/bin</code></td>
-</tr>
-<tr>
-<td style="text-align:left">conf</td>
-<td style="text-align:left">Configuration files elasticsearch.yml and logging.yml.</td>
-<td style="text-align:left"><code>{extract.path}/config</code></td>
-</tr>
-<tr>
-<td style="text-align:left">data</td>
-<td style="text-align:left">The location of the data files of each index / shard allocated on the node.</td>
-<td style="text-align:left"><code>{extract.path}/data</code></td>
-</tr>
-<tr>
-<td style="text-align:left">logs</td>
-<td style="text-align:left">Log files location</td>
-<td style="text-align:left"><code>{extract.path}/logs</code></td>
-</tr>
-<tr>
-<td style="text-align:left">plugins</td>
-<td style="text-align:left">Plugin files location. Each plugin will be contained in a subdirectory.</td>
-<td style="text-align:left"><code>{extract.path}/plugins</code></td>
-</tr>
-<tr>
-<td style="text-align:left">repo</td>
-<td style="text-align:left">Shared file system repository locations.</td>
-<td style="text-align:left">Not configured</td>
-</tr>
-<tr>
-<td style="text-align:left">script</td>
-<td style="text-align:left">Location of script files.</td>
-<td style="text-align:left"><code>{extract.path}/config/scripts</code></td>
-</tr>
-</tbody>
-</table>
-<p>通过<code>apt</code>方式安装的默认目录如下：</p>
-<table>
-<thead>
-<tr>
-<th style="text-align:left">Type</th>
-<th style="text-align:left">Description</th>
-<th style="text-align:left">Location Debian/Ubuntu</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">home</td>
-<td style="text-align:left">Home of elasticsearch installation.</td>
-<td style="text-align:left"><code>/usr/share/elasticsearch</code></td>
-</tr>
-<tr>
-<td style="text-align:left">bin</td>
-<td style="text-align:left">Binary scripts including elasticsearch to start a node.</td>
-<td style="text-align:left"><code>/usr/share/elasticsearch/bin</code></td>
-</tr>
-<tr>
-<td style="text-align:left">conf</td>
-<td style="text-align:left">Configuration files elasticsearch.yml and logging.yml.</td>
-<td style="text-align:left"><code>/etc/elasticsearch</code></td>
-</tr>
-<tr>
-<td style="text-align:left">conf</td>
-<td style="text-align:left">Environment variables including heap size, file descriptors. <strong>There isn’t this folder when install using <code>tar.gz</code></strong></td>
-<td style="text-align:left"><code>/etc/default/elasticsearch</code></td>
-</tr>
-<tr>
-<td style="text-align:left">data</td>
-<td style="text-align:left">The location of the data files of each index / shard allocated on the node.</td>
-<td style="text-align:left"><code>/var/lib/elasticsearch</code></td>
-</tr>
-<tr>
-<td style="text-align:left">logs</td>
-<td style="text-align:left">Log files location</td>
-<td style="text-align:left"><code>/var/log/elasticsearch</code></td>
-</tr>
-<tr>
-<td style="text-align:left">plugins</td>
-<td style="text-align:left">Plugin files location. Each plugin will be contained in a subdirectory.</td>
-<td style="text-align:left"><code>/usr/share/elasticsearch/plugins</code></td>
-</tr>
-<tr>
-<td style="text-align:left">repo</td>
-<td style="text-align:left">Shared file system repository locations.</td>
-<td style="text-align:left">Not configured</td>
-</tr>
-<tr>
-<td style="text-align:left">script</td>
-<td style="text-align:left">Location of script files.</td>
-<td style="text-align:left"><code>/etc/elasticsearch/scripts</code></td>
-</tr>
-</tbody>
-</table>
-<h1 id="安装Elasticsearch插件"><a href="#安装Elasticsearch插件" class="headerlink" title="安装Elasticsearch插件"></a>安装Elasticsearch插件</h1><p>Plugins are a way to enhance the core Elasticsearch functionality in a custom manner. They range from adding custom mapping types, custom analyzers, native scripts, custom discovery and more.</p>
-<p>There are three types of plugins:</p>
-<ul>
-<li><code>Java Plugins</code>: These plugins contain only JAR files, and must be installed on every node in the cluster. <strong>After installation, each node must be restarted before the plugin becomes visible.</strong></li>
-<li><code>Site Plugins</code>: These plugins contain static web content like Javascript, HTML, and CSS files, that can be served directly from Elasticsearch. Site plugins may only need to be installed on one node, and do not require a restart to become visible.<ul>
-<li>The content of site plugins is accessible via a URL like: <code>http://yournode:9200/_plugin/[plugin name]</code></li>
-</ul>
-</li>
-<li><code>Mixed Plugins</code>: Mixed plugins contain both JAR files and web content.</li>
-</ul>
-<h2 id="安装Site-Plugins"><a href="#安装Site-Plugins" class="headerlink" title="安装Site Plugins"></a>安装<code>Site Plugins</code></h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">$ sudo su -</div><div class="line">$ <span class="built_in">cd</span> /</div><div class="line"></div><div class="line"><span class="comment"># 查看已安装插件</span></div><div class="line">$ /usr/share/elasticsearch/bin/plugin list</div><div class="line"></div><div class="line"><span class="comment"># 安装elasticsearch-head，访问http://localhost:9200/_plugin/head</span></div><div class="line">$ /usr/share/elasticsearch/bin/plugin install mobz/elasticsearch-head</div><div class="line"></div><div class="line"><span class="comment"># 安装elasticsearch-kopf，访问http://localhost:9200/_plugin/kopf</span></div><div class="line">$ /usr/share/elasticsearch/bin/plugin install lmenezes/elasticsearch-kopf</div><div class="line"></div><div class="line"><span class="comment"># 安装elastichq，访问http://localhost:9200/_plugin/hq</span></div><div class="line">$ /usr/share/elasticsearch/bin/plugin install royrusso/elasticsearch-HQ</div><div class="line"></div><div class="line"><span class="comment"># 安装elasticsearch-inquisitor，访问http://localhost:9200/_plugin/elasticsearch-inquisitor</span></div><div class="line">$ /usr/share/elasticsearch/bin/plugin install polyfractal/elasticsearch-inquisitor</div></pre></td></tr></table></figure>
-<h2 id="安装Jar-Plugins"><a href="#安装Jar-Plugins" class="headerlink" title="安装Jar Plugins"></a>安装<code>Jar Plugins</code></h2><h3 id="安装elasticsearch-analysis-ik"><a href="#安装elasticsearch-analysis-ik" class="headerlink" title="安装elasticsearch-analysis-ik"></a>安装<code>elasticsearch-analysis-ik</code></h3><p>安装前请注意和Elasticsearch的适配版本，安装<a href="https://github.com/medcl/elasticsearch-analysis-ik" target="_blank" rel="external">elasticsearch-analysis-ik</a>有两种方式：</p>
-<ul>
-<li>通过源代码手动编译安装<ul>
-<li>请先<a href="http://maven.apache.org/install.html" target="_blank" rel="external">安装apache maven</a></li>
-<li>下载<code>Apache Maven</code>的源代码<ul>
-<li><code>git clone https://github.com/medcl/elasticsearch-analysis-ik.git</code></li>
-</ul>
-</li>
-<li>编译打包<ul>
-<li><code>cd [elasticsearch-analysis-ik所在目录]</code></li>
-<li><code>git checkout v1.9.2</code></li>
-<li><code>mvn package</code></li>
-</ul>
-</li>
-<li>解压编译生成的打包文件<code>target/releases/elasticsearch-analysis-ik-{version}.zip</code>，并拷贝解压后的文件到Elasticsearch的plugins目录<ul>
-<li><code>unzip elasticsearch-analysis-ik-{version}.zip -d elasticsearch-analysis-ik-{version}</code></li>
-<li><code>scp -r elasticsearch-analysis-ik-{version} ubuntu@xxx.xxx.xxx.xxx:/var/tmp/</code></li>
-<li><code>cp -R /var/tmp/elasticsearch-analysis-ik-{version} /usr/share/elasticsearch/plugins</code></li>
-<li><code>chown -R elasticsearch:elasticsearch /usr/share/elasticsearch/plugins/elasticsearch-analysis-ik-{version}</code></li>
-</ul>
-</li>
-<li>重启elasticsearch服务<ul>
-<li><code>service elasticsearch restart</code></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>直接<a href="https://github.com/medcl/elasticsearch-analysis-ik/releases" target="_blank" rel="external">下载安装程序包</a><ul>
-<li>下载指定版本的打包文件</li>
-<li>后续步骤同上</li>
-</ul>
-</li>
-</ul>
-<p>注意：</p>
-<ul>
-<li>v2.2.1版本以后安装<code>elasticsearch-analysis-ik</code>并不需要修改<code>elasticsearch.yml</code>配置文件</li>
-</ul>
-<h3 id="安装elasticsearch-analysis-pinyin"><a href="#安装elasticsearch-analysis-pinyin" class="headerlink" title="安装elasticsearch-analysis-pinyin"></a>安装<code>elasticsearch-analysis-pinyin</code></h3><p>安装前请注意和Elasticsearch的适配版本, 安装<a href="https://github.com/medcl/elasticsearch-analysis-pinyin" target="_blank" rel="external">elasticsearch-analysis-pinyin</a>有两种方式：</p>
-<ul>
-<li>通过源代码手动编译安装<ul>
-<li>具体操作参考<code>elasticsearch-analysis-ik</code>的安装步骤</li>
-</ul>
-</li>
-<li>直接<a href="https://github.com/medcl/elasticsearch-analysis-pinyin/releases" target="_blank" rel="external">下载安装程序包</a></li>
-</ul>
-<h3 id="安装elasticsearch-analysis-stconvert"><a href="#安装elasticsearch-analysis-stconvert" class="headerlink" title="安装elasticsearch-analysis-stconvert"></a>安装<code>elasticsearch-analysis-stconvert</code></h3><p>安装前请注意和Elasticsearch的适配版本, 安装<a href="https://github.com/medcl/elasticsearch-analysis-stconvert" target="_blank" rel="external">elasticsearch-analysis-stconvert</a>有两种方式：</p>
-<ul>
-<li>通过源代码手动编译安装<ul>
-<li>具体操作参考<code>elasticsearch-analysis-ik</code>的安装步骤</li>
-</ul>
-</li>
-<li>直接<a href="https://github.com/medcl/elasticsearch-analysis-stconvert/releases" target="_blank" rel="external">下载安装程序包</a></li>
-</ul>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>建议Oracle JDK和Elasticsearch均使用<code>apt</code>安装方式安装，原因如下：</p>
-<ul>
-<li>安装方便</li>
-<li>默认目录的配置更规范</li>
-<li>和Elasticsearch官方的Docker镜像的目录结构一致，未来切换到Docker方式部署障碍少，参考<a href="https://github.com/docker-library/elasticsearch/blob/8267f6c29f06373373b4379473291d3082728cc0/2.3/Dockerfile" target="_blank" rel="external">Dockerfile</a></li>
-</ul>
 
           
         
@@ -2133,7 +1931,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">14</span>
+              <span class="site-state-item-count">15</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -2141,7 +1939,7 @@
           
             <div class="site-state-item site-state-categories">
               <a href="/categories">
-                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-count">4</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -2150,7 +1948,7 @@
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-count">14</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>

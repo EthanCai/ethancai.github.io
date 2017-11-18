@@ -57,7 +57,7 @@
 
 
 
-<meta name="description" content="在Ubuntu Server 14.04上安装MongoDB 3.2.6 Import the public key used by the package management system sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927   Create a list file for Mon">
+<meta name="description" content="在Ubuntu Server 14.04上安装MongoDB 3.2.6 Import the public key used by the package management system sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --re">
 <meta name="keywords" content="mongodb">
 <meta property="og:type" content="article">
 <meta property="og:title" content="在Ubuntu Server 14.04上配置一个最小的MongoDB副本集">
@@ -316,12 +316,12 @@
 </ul>
 </li>
 <li><p>Pin a specific version of MongoDB</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-server hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-shell hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-mongos hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div><div class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-tools hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-server hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-shell hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-mongos hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</span><br><span class="line"><span class="built_in">echo</span> <span class="string">"mongodb-org-tools hold"</span> | sudo dpkg --<span class="built_in">set</span>-selections</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>修改MongoDB的配置文件<code>/etc/mongod.conf</code></p>
 <ul>
 <li>修改<code>net.bindIp</code>为<code>0.0.0.0</code></li>
-<li>增加配置<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="attr">storage:</span></div><div class="line"><span class="attr">  directoryPerDB:</span> <span class="literal">true</span></div></pre></td></tr></table></figure>
+<li>增加配置<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">storage:</span></span><br><span class="line"><span class="attr">  directoryPerDB:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 </li>
@@ -331,16 +331,16 @@
 <li><code>mongo</code></li>
 </ul>
 </li>
-<li><p>Disable Transparent Huge Pages，参考<a href="https://docs.mongodb.com/manual/tutorial/transparent-huge-pages/" target="_blank" rel="external">这里</a></p>
+<li><p>Disable Transparent Huge Pages，参考<a href="https://docs.mongodb.com/manual/tutorial/transparent-huge-pages/" target="_blank" rel="noopener">这里</a></p>
 <ul>
 <li><p>Create the init.d script</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#!/bin/sh</span></div><div class="line"><span class="comment">### BEGIN INIT INFO</span></div><div class="line"><span class="comment"># Provides:          disable-transparent-hugepages</span></div><div class="line"><span class="comment"># Required-Start:    $local_fs</span></div><div class="line"><span class="comment"># Required-Stop:</span></div><div class="line"><span class="comment"># X-Start-Before:    mongod mongodb-mms-automation-agent</span></div><div class="line"><span class="comment"># Default-Start:     2 3 4 5</span></div><div class="line"><span class="comment"># Default-Stop:      0 1 6</span></div><div class="line"><span class="comment"># Short-Description: Disable Linux transparent huge pages</span></div><div class="line"><span class="comment"># Description:       Disable Linux transparent huge pages, to improve</span></div><div class="line"><span class="comment">#                    database performance.</span></div><div class="line"><span class="comment">### END INIT INFO</span></div><div class="line"></div><div class="line"><span class="keyword">case</span> <span class="variable">$1</span> <span class="keyword">in</span></div><div class="line">  start)</div><div class="line">    <span class="keyword">if</span> [ -d /sys/kernel/mm/transparent_hugepage ]; <span class="keyword">then</span></div><div class="line">      thp_path=/sys/kernel/mm/transparent_hugepage</div><div class="line">    <span class="keyword">elif</span> [ -d /sys/kernel/mm/redhat_transparent_hugepage ]; <span class="keyword">then</span></div><div class="line">      thp_path=/sys/kernel/mm/redhat_transparent_hugepage</div><div class="line">    <span class="keyword">else</span></div><div class="line">      <span class="built_in">return</span> 0</div><div class="line">    <span class="keyword">fi</span></div><div class="line"></div><div class="line">    <span class="built_in">echo</span> <span class="string">'never'</span> &gt; <span class="variable">$&#123;thp_path&#125;</span>/enabled</div><div class="line">    <span class="built_in">echo</span> <span class="string">'never'</span> &gt; <span class="variable">$&#123;thp_path&#125;</span>/defrag</div><div class="line"></div><div class="line">    <span class="built_in">unset</span> thp_path</div><div class="line">    ;;</div><div class="line"><span class="keyword">esac</span></div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"><span class="comment">### BEGIN INIT INFO</span></span><br><span class="line"><span class="comment"># Provides:          disable-transparent-hugepages</span></span><br><span class="line"><span class="comment"># Required-Start:    $local_fs</span></span><br><span class="line"><span class="comment"># Required-Stop:</span></span><br><span class="line"><span class="comment"># X-Start-Before:    mongod mongodb-mms-automation-agent</span></span><br><span class="line"><span class="comment"># Default-Start:     2 3 4 5</span></span><br><span class="line"><span class="comment"># Default-Stop:      0 1 6</span></span><br><span class="line"><span class="comment"># Short-Description: Disable Linux transparent huge pages</span></span><br><span class="line"><span class="comment"># Description:       Disable Linux transparent huge pages, to improve</span></span><br><span class="line"><span class="comment">#                    database performance.</span></span><br><span class="line"><span class="comment">### END INIT INFO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">case</span> <span class="variable">$1</span> <span class="keyword">in</span></span><br><span class="line">  start)</span><br><span class="line">    <span class="keyword">if</span> [ -d /sys/kernel/mm/transparent_hugepage ]; <span class="keyword">then</span></span><br><span class="line">      thp_path=/sys/kernel/mm/transparent_hugepage</span><br><span class="line">    <span class="keyword">elif</span> [ -d /sys/kernel/mm/redhat_transparent_hugepage ]; <span class="keyword">then</span></span><br><span class="line">      thp_path=/sys/kernel/mm/redhat_transparent_hugepage</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">      <span class="built_in">return</span> 0</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">'never'</span> &gt; <span class="variable">$&#123;thp_path&#125;</span>/enabled</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">'never'</span> &gt; <span class="variable">$&#123;thp_path&#125;</span>/defrag</span><br><span class="line"></span><br><span class="line">    <span class="built_in">unset</span> thp_path</span><br><span class="line">    ;;</span><br><span class="line"><span class="keyword">esac</span></span><br></pre></td></tr></table></figure>
 </li>
 <li><p>Make it executable</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo chmod 755 /etc/init.d/<span class="built_in">disable</span>-transparent-hugepages</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo chmod 755 /etc/init.d/<span class="built_in">disable</span>-transparent-hugepages</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>Configure your operating system to run it on boot</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo update-rc.d <span class="built_in">disable</span>-transparent-hugepages defaults</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo update-rc.d <span class="built_in">disable</span>-transparent-hugepages defaults</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>重启OS</p>
 </li>
@@ -356,7 +356,7 @@
 <li>准备2台高配ec2（假设为A、B）和1台低配ec2（假设为C）</li>
 <li>在A、B、C上参考上一节的步骤安装MongoDB</li>
 <li><p>在A的Shell中执行<code>mongo</code>命令，然后创建超级管理员</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">$ mongo</div><div class="line">&gt; admin = db.getSiblingDB(<span class="string">"admin"</span>);</div><div class="line">&gt; admin.createUser(&#123; <span class="attr">user</span>: <span class="string">"ethan"</span>, <span class="attr">pwd</span>: <span class="string">"&#123;ethan的密码&#125;"</span>, <span class="attr">roles</span>: [&#123; <span class="attr">role</span>: <span class="string">"root"</span>, <span class="attr">db</span>: <span class="string">"admin"</span> &#125;] &#125;);</div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ mongo</span><br><span class="line">&gt; admin = db.getSiblingDB(<span class="string">"admin"</span>);</span><br><span class="line">&gt; admin.createUser(&#123; <span class="attr">user</span>: <span class="string">"ethan"</span>, <span class="attr">pwd</span>: <span class="string">"&#123;ethan的密码&#125;"</span>, <span class="attr">roles</span>: [&#123; <span class="attr">role</span>: <span class="string">"root"</span>, <span class="attr">db</span>: <span class="string">"admin"</span> &#125;] &#125;);</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>准备keyfile</p>
 <ul>
@@ -374,17 +374,17 @@
 </li>
 <li><p>修改A、B的配置文件<code>/etc/mongod.conf</code></p>
 <ul>
-<li>增加配置<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="attr">security:</span></div><div class="line"><span class="attr">  keyFile:</span> <span class="string">"/etc/rs0.key"</span></div><div class="line"><span class="attr">  authorization:</span> <span class="string">enabled</span></div><div class="line"></div><div class="line"><span class="attr">replication:</span></div><div class="line"><span class="attr">  replSetName:</span> <span class="string">rs0</span></div></pre></td></tr></table></figure>
+<li>增加配置<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">security:</span></span><br><span class="line"><span class="attr">  keyFile:</span> <span class="string">"/etc/rs0.key"</span></span><br><span class="line"><span class="attr">  authorization:</span> <span class="string">enabled</span></span><br><span class="line"></span><br><span class="line"><span class="attr">replication:</span></span><br><span class="line"><span class="attr">  replSetName:</span> <span class="string">rs0</span></span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 </li>
 <li><p>修改C的配置文件<code>/etc/mongod.conf</code></p>
 <ul>
 <li><p>增加配置</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="attr">security:</span></div><div class="line"><span class="attr">  keyFile:</span> <span class="string">"/etc/rs0.key"</span></div><div class="line"><span class="attr">  authorization:</span> <span class="string">enabled</span></div><div class="line"></div><div class="line"><span class="attr">replication:</span></div><div class="line"><span class="attr">  replSetName:</span> <span class="string">rs0</span></div></pre></td></tr></table></figure>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">security:</span></span><br><span class="line"><span class="attr">  keyFile:</span> <span class="string">"/etc/rs0.key"</span></span><br><span class="line"><span class="attr">  authorization:</span> <span class="string">enabled</span></span><br><span class="line"></span><br><span class="line"><span class="attr">replication:</span></span><br><span class="line"><span class="attr">  replSetName:</span> <span class="string">rs0</span></span><br></pre></td></tr></table></figure>
 </li>
 <li><p>修改配置</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="attr">storage:</span></div><div class="line"><span class="attr">  journal:</span></div><div class="line"><span class="attr">    enabled:</span> <span class="literal">false</span></div></pre></td></tr></table></figure>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">storage:</span></span><br><span class="line"><span class="attr">  journal:</span></span><br><span class="line"><span class="attr">    enabled:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 </li>
@@ -393,29 +393,29 @@
 <li><p>配置集群</p>
 <ul>
 <li><p>连接A上的<code>mongod</code>实例</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ mongo -u ethan -p &#123;ethan的密码&#125; --authenticationDatabase admin</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ mongo -u ethan -p &#123;ethan的密码&#125; --authenticationDatabase admin</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>通过下面的命令配置ReplicaSet：</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">&gt; rs.initiate()</div><div class="line">&gt; cfg = rs.conf()</div><div class="line">&gt; cfg.members[<span class="number">0</span>].host = <span class="string">"&#123;A的IP&#125;:27017"</span></div><div class="line">&gt; rs.reconfig(cfg)</div><div class="line">&gt; rs.add(<span class="string">"&#123;B的IP&#125;"</span>)</div><div class="line">&gt; rs.addArb(<span class="string">"&#123;C的IP&#125;"</span>)</div><div class="line"></div><div class="line"><span class="comment">// 等待几秒...</span></div><div class="line">&gt; rs.status()  <span class="comment">// 检查副本集状态</span></div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&gt; rs.initiate()</span><br><span class="line">&gt; cfg = rs.conf()</span><br><span class="line">&gt; cfg.members[<span class="number">0</span>].host = <span class="string">"&#123;A的IP&#125;:27017"</span></span><br><span class="line">&gt; rs.reconfig(cfg)</span><br><span class="line">&gt; rs.add(<span class="string">"&#123;B的IP&#125;"</span>)</span><br><span class="line">&gt; rs.addArb(<span class="string">"&#123;C的IP&#125;"</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等待几秒...</span></span><br><span class="line">&gt; rs.status()  <span class="comment">// 检查副本集状态</span></span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 </li>
 <li><p>为副本集客户端创建访问账户</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&gt; use &#123;dbname&#125;;</div><div class="line">&gt; db.createUser(&#123; <span class="attr">user</span>: <span class="string">"&#123;账户名&#125;"</span>, <span class="attr">pwd</span>: <span class="string">"&#123;账户密码&#125;"</span>, <span class="attr">roles</span>: [&#123; <span class="attr">role</span>: <span class="string">"readWrite"</span>, <span class="attr">db</span>: <span class="string">"&#123;dbname&#125;"</span> &#125;] &#125;);</div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt; use &#123;dbname&#125;;</span><br><span class="line">&gt; db.createUser(&#123; <span class="attr">user</span>: <span class="string">"&#123;账户名&#125;"</span>, <span class="attr">pwd</span>: <span class="string">"&#123;账户密码&#125;"</span>, <span class="attr">roles</span>: [&#123; <span class="attr">role</span>: <span class="string">"readWrite"</span>, <span class="attr">db</span>: <span class="string">"&#123;dbname&#125;"</span> &#125;] &#125;);</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
-<li><a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/" target="_blank" rel="external">Install MongoDB on Ubuntu</a>， 注意：<ul>
+<li><a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/" target="_blank" rel="noopener">Install MongoDB on Ubuntu</a>， 注意：<ul>
 <li>安装过程需要指定MongoDB的安装版本</li>
 <li>锁定MongoDB的安装版本，避免执行<code>apt-get</code>升级命令的时候连带升级MongoDB</li>
 </ul>
 </li>
-<li><a href="https://docs.mongodb.com/manual/tutorial/enforce-keyfile-access-control-in-existing-replica-set/" target="_blank" rel="external">Enforce Keyfile Access Control in a Replica Set</a><ul>
+<li><a href="https://docs.mongodb.com/manual/tutorial/enforce-keyfile-access-control-in-existing-replica-set/" target="_blank" rel="noopener">Enforce Keyfile Access Control in a Replica Set</a><ul>
 <li>Security between members of the replica set using Internal Authentication</li>
 <li>Security between connecting clients and the replica set using User Access Controls</li>
 </ul>
 </li>
-<li><a href="https://docs.mongodb.com/manual/reference/configuration-options/#core-options" target="_blank" rel="external">MongoDB configuration file options</a></li>
+<li><a href="https://docs.mongodb.com/manual/reference/configuration-options/#core-options" target="_blank" rel="noopener">MongoDB configuration file options</a></li>
 </ul>
 
       
@@ -525,7 +525,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">14</span>
+              <span class="site-state-item-count">15</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -533,7 +533,7 @@
           
             <div class="site-state-item site-state-categories">
               <a href="/categories">
-                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-count">4</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -542,7 +542,7 @@
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-count">14</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>

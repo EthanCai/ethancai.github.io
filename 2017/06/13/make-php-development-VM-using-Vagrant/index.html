@@ -57,7 +57,7 @@
 
 
 
-<meta name="description" content="这篇文章介绍的项目地址：https://github.com/EthanCai/php-dev-vm 简介php-dev-vm可以帮助快速构建PHP虚拟机开发环境。你也可以修改Vagrantfile，定制自己的PHP虚拟机开发环境。 解决什么问题多人团队开发环境不同步一般带来如下问题：  不同电脑上单独安装配置占用时间，后续解决环境配置、依赖等问题也会占用较多工作时间，团队越大问题越突出 没有标">
+<meta name="description" content="这篇文章介绍的项目地址：https://github.com/EthanCai/php-dev-vm 简介php-dev-vm可以帮助快速构建PHP虚拟机开发环境。你也可以修改Vagrantfile，定制自己的PHP虚拟机开发环境。 解决什么问题多人团队开发环境不同步一般带来如下问题：  不同电脑上单独安装配置占用时间">
 <meta name="keywords" content="php">
 <meta property="og:type" content="article">
 <meta property="og:title" content="2 - Make PHP development VM using Vagrant | Study PHP">
@@ -298,8 +298,8 @@
       
 
       
-        <img src="/2017/06/13/make-php-development-VM-using-Vagrant/make-php-development-VM-using-Vagrant-13489.png" alt="make-php-development-VM-using-Vagrant-13489.png" title="">
-<p>这篇文章介绍的项目地址：<a href="https://github.com/EthanCai/php-dev-vm" target="_blank" rel="external">https://github.com/EthanCai/php-dev-vm</a></p>
+        <img src="/2017/06/13/make-php-development-VM-using-Vagrant/make-php-development-VM-using-Vagrant-13489.png">
+<p>这篇文章介绍的项目地址：<a href="https://github.com/EthanCai/php-dev-vm" target="_blank" rel="noopener">https://github.com/EthanCai/php-dev-vm</a></p>
 <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p><code>php-dev-vm</code>可以帮助快速构建<code>PHP</code>虚拟机开发环境。你也可以修改<code>Vagrantfile</code>，定制自己的<code>PHP</code>虚拟机开发环境。</p>
 <h1 id="解决什么问题"><a href="#解决什么问题" class="headerlink" title="解决什么问题"></a>解决什么问题</h1><p>多人团队开发环境不同步一般带来如下问题：</p>
 <ul>
@@ -319,35 +319,35 @@
 <li><code>virualbox</code></li>
 </ul>
 <h2 id="安装依赖Vagrant-Box"><a href="#安装依赖Vagrant-Box" class="headerlink" title="安装依赖Vagrant Box"></a>安装依赖Vagrant Box</h2><p>Install CentOS 7.2 box</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&gt; vagrant box add <span class="string">"CentOS-7.2-x64"</span> https://github.com/CommanderK5/packer-centos-template/releases/download/0.7.2/vagrant-centos-7.2.box</div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt; vagrant box add <span class="string">"CentOS-7.2-x64"</span> https://github.com/CommanderK5/packer-centos-template/releases/download/0.7.2/vagrant-centos-7.2.box</span><br></pre></td></tr></table></figure>
 <h2 id="如何构建PHP开发环境Vagrant-Box"><a href="#如何构建PHP开发环境Vagrant-Box" class="headerlink" title="如何构建PHP开发环境Vagrant Box"></a>如何构建PHP开发环境Vagrant Box</h2><h3 id="构建php-dev-vm-5-6-30-box"><a href="#构建php-dev-vm-5-6-30-box" class="headerlink" title="构建php-dev-vm-5.6.30.box"></a>构建<code>php-dev-vm-5.6.30.box</code></h3><p>编写<code>Vagrantfile</code>:</p>
 <p>见<a href="./src/PHP-5.6.30/Vagrantfile">这里</a></p>
 <p>构建<code>Vagrant Box</code>:</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">&gt; <span class="comment"># start vm</span></div><div class="line">&gt; vagrant up</div><div class="line"></div><div class="line">&gt; <span class="comment"># config mysql root password</span></div><div class="line">&gt; mysql_secure_installation</div><div class="line">&gt; <span class="comment"># todo: add more config statements</span></div><div class="line"></div><div class="line">&gt; <span class="comment"># create vagrant box</span></div><div class="line">&gt; vagrant package --output <span class="string">"php-dev-vm-5.6.30.box"</span> &#123;vm_id&#125; &amp;&amp; mv php-dev-vm-5.6.30.box ../../box/</div></pre></td></tr></table></figure>
-<h2 id="如何使用Vagrant-Box启动PHP开发环境虚拟机"><a href="#如何使用Vagrant-Box启动PHP开发环境虚拟机" class="headerlink" title="如何使用Vagrant Box启动PHP开发环境虚拟机"></a>如何使用Vagrant Box启动PHP开发环境虚拟机</h2><h3 id="使用-php-dev-vm-5-6-30-box"><a href="#使用-php-dev-vm-5-6-30-box" class="headerlink" title="使用 php-dev-vm-5.6.30.box"></a>使用 <code>php-dev-vm-5.6.30.box</code></h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">&gt; <span class="comment"># build php-dev-vm-5.6.30.box or download box from ftp://10.75.87.202/php-dev-vm-5.6.30.box (get the url from Ethan if not available)</span></div><div class="line">&gt; wget ftp://10.75.87.202/php-dev-vm-5.6.30.box &amp;&amp; mv php-dev-vm-5.6.30.box ./box/php-dev-vm-5.6.30.box</div><div class="line"></div><div class="line">&gt; <span class="built_in">cd</span> work/php56</div><div class="line">&gt; vagrant box remove <span class="string">"../../box/php-dev-vm-5.6.30.box"</span> || <span class="literal">true</span> &amp;&amp; vagrant up  <span class="comment"># ignore error when box not exists</span></div><div class="line"></div><div class="line">&gt; <span class="comment"># the password of mysql `root` user is `eVkU,iO);5R&gt;`</span></div></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="comment"># start vm</span></span><br><span class="line">&gt; vagrant up</span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># config mysql root password</span></span><br><span class="line">&gt; mysql_secure_installation</span><br><span class="line">&gt; <span class="comment"># todo: add more config statements</span></span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># create vagrant box</span></span><br><span class="line">&gt; vagrant package --output <span class="string">"php-dev-vm-5.6.30.box"</span> &#123;vm_id&#125; &amp;&amp; mv php-dev-vm-5.6.30.box ../../box/</span><br></pre></td></tr></table></figure>
+<h2 id="如何使用Vagrant-Box启动PHP开发环境虚拟机"><a href="#如何使用Vagrant-Box启动PHP开发环境虚拟机" class="headerlink" title="如何使用Vagrant Box启动PHP开发环境虚拟机"></a>如何使用Vagrant Box启动PHP开发环境虚拟机</h2><h3 id="使用-php-dev-vm-5-6-30-box"><a href="#使用-php-dev-vm-5-6-30-box" class="headerlink" title="使用 php-dev-vm-5.6.30.box"></a>使用 <code>php-dev-vm-5.6.30.box</code></h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="comment"># build php-dev-vm-5.6.30.box or download box from ftp://10.75.87.202/php-dev-vm-5.6.30.box (get the url from Ethan if not available)</span></span><br><span class="line">&gt; wget ftp://10.75.87.202/php-dev-vm-5.6.30.box &amp;&amp; mv php-dev-vm-5.6.30.box ./box/php-dev-vm-5.6.30.box</span><br><span class="line"></span><br><span class="line">&gt; <span class="built_in">cd</span> work/php56</span><br><span class="line">&gt; vagrant box remove <span class="string">"../../box/php-dev-vm-5.6.30.box"</span> || <span class="literal">true</span> &amp;&amp; vagrant up  <span class="comment"># ignore error when box not exists</span></span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># the password of mysql `root` user is `eVkU,iO);5R&gt;`</span></span><br></pre></td></tr></table></figure>
 <h1 id="References"><a href="#References" class="headerlink" title="References"></a>References</h1><ul>
-<li>Vagrant: <a href="https://www.vagrantup.com/docs/index.html" target="_blank" rel="external">https://www.vagrantup.com/docs/index.html</a></li>
+<li>Vagrant: <a href="https://www.vagrantup.com/docs/index.html" target="_blank" rel="noopener">https://www.vagrantup.com/docs/index.html</a></li>
 <li>Discover Vagrant Boxes<ul>
-<li><a href="https://atlas.hashicorp.com/boxes/search" target="_blank" rel="external">https://atlas.hashicorp.com/boxes/search</a></li>
-<li><a href="http://www.vagrantbox.es/" target="_blank" rel="external">http://www.vagrantbox.es/</a></li>
+<li><a href="https://atlas.hashicorp.com/boxes/search" target="_blank" rel="noopener">https://atlas.hashicorp.com/boxes/search</a></li>
+<li><a href="http://www.vagrantbox.es/" target="_blank" rel="noopener">http://www.vagrantbox.es/</a></li>
 </ul>
 </li>
 <li>Nginx配置<ul>
-<li><a href="http://nginx.org/en/docs/beginners_guide.html" target="_blank" rel="external">Nginx Beginner’s Guide</a></li>
-<li><a href="https://nealpoole.com/blog/2011/04/setting-up-php-fastcgi-and-nginx-dont-trust-the-tutorials-check-your-configuration/" target="_blank" rel="external">Setting up PHP-FastCGI and nginx? Don’t trust the tutorials: check your configuration!</a></li>
-<li><a href="https://segmentfault.com/a/1190000003067656" target="_blank" rel="external">nginx和php-fpm基础环境的安装和配置</a></li>
+<li><a href="http://nginx.org/en/docs/beginners_guide.html" target="_blank" rel="noopener">Nginx Beginner’s Guide</a></li>
+<li><a href="https://nealpoole.com/blog/2011/04/setting-up-php-fastcgi-and-nginx-dont-trust-the-tutorials-check-your-configuration/" target="_blank" rel="noopener">Setting up PHP-FastCGI and nginx? Don’t trust the tutorials: check your configuration!</a></li>
+<li><a href="https://segmentfault.com/a/1190000003067656" target="_blank" rel="noopener">nginx和php-fpm基础环境的安装和配置</a></li>
 </ul>
 </li>
 <li>PHP-FPM配置<ul>
-<li>FastCGI 进程管理器（FPM）配置：<a href="http://php.net/manual/zh/install.fpm.configuration.php" target="_blank" rel="external">http://php.net/manual/zh/install.fpm.configuration.php</a></li>
-<li><a href="https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/" target="_blank" rel="external">https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/</a></li>
+<li>FastCGI 进程管理器（FPM）配置：<a href="http://php.net/manual/zh/install.fpm.configuration.php" target="_blank" rel="noopener">http://php.net/manual/zh/install.fpm.configuration.php</a></li>
+<li><a href="https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/" target="_blank" rel="noopener">https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/</a></li>
 </ul>
 </li>
 <li>PHP Function Reference／扩展列表<ul>
-<li><a href="http://php.net/manual/en/funcref.php" target="_blank" rel="external">http://php.net/manual/en/funcref.php</a></li>
+<li><a href="http://php.net/manual/en/funcref.php" target="_blank" rel="noopener">http://php.net/manual/en/funcref.php</a></li>
 </ul>
 </li>
-<li><a href="https://confluence.jetbrains.com/display/PhpStorm/Debugging+with+PhpStorm" target="_blank" rel="external">Debugging with PhpStorm</a></li>
+<li><a href="https://confluence.jetbrains.com/display/PhpStorm/Debugging+with+PhpStorm" target="_blank" rel="noopener">Debugging with PhpStorm</a></li>
 </ul>
 
       
@@ -457,7 +457,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">14</span>
+              <span class="site-state-item-count">15</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -465,7 +465,7 @@
           
             <div class="site-state-item site-state-categories">
               <a href="/categories">
-                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-count">4</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -474,7 +474,7 @@
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-count">14</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
