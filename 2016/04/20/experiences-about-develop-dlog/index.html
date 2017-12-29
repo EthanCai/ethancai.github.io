@@ -57,7 +57,7 @@
 
 
 
-<meta name="description" content="目录  前言 dlog的用途 对dlog的一些非功能性需求 碰到问题及解决方案 何时使用panic，何时使用return error 如何实现一个logger只能接收对应类型的data log 如何实现批量发送data log 如何实现对Logger.Log方法的调用超时机制 如何在logger没有收到新msg情况下，">
+<meta name="description" content="目录  前言 dlog的用途 对dlog的一些非功能性需求 碰到问题及解决方案 何时使用panic，何时使用return error 如何实现一个logger只能接收对应类型的data log 如何实现批量发送data log 如何实现对Logger.Log方法的调用超时机制 如何在logger没有收到新msg情况下，保证buf中的数据依然会定期发送给AWS Kinesis 如何向程序外部暴露运行">
 <meta name="keywords" content="golang,data log">
 <meta property="og:type" content="article">
 <meta property="og:title" content="记一次结对开发Golang组件的过程">
@@ -677,7 +677,7 @@ digraph G {
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-count">16</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -694,7 +694,7 @@ digraph G {
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-count">15</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
