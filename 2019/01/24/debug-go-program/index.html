@@ -1,0 +1,920 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="coding," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0" />
+
+
+
+
+
+
+<meta name="description" content="概述定位Go程序的错误，通常有两种方式：  打印日志 调试  Go是编译型语言，且IDE对调试的支持不太好，绝大多数Go的初学者调试Go程序都是通过log.Printf等打印日志方式定位问题。通常过程如下：  程序panic或者报错 修改Go程序，添加打印调试日志代码 编译Go程序 重复错误出现时的操作，查看日志 如果定位问题原因，修复程序错误，删除打印debug日志代码，返回第3步的操作 如果未">
+<meta name="keywords" content="coding">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Debugging Go Program">
+<meta property="og:url" content="http://ethancai.github.io/2019/01/24/debug-go-program/index.html">
+<meta property="og:site_name" content="技术哲学">
+<meta property="og:description" content="概述定位Go程序的错误，通常有两种方式：  打印日志 调试  Go是编译型语言，且IDE对调试的支持不太好，绝大多数Go的初学者调试Go程序都是通过log.Printf等打印日志方式定位问题。通常过程如下：  程序panic或者报错 修改Go程序，添加打印调试日志代码 编译Go程序 重复错误出现时的操作，查看日志 如果定位问题原因，修复程序错误，删除打印debug日志代码，返回第3步的操作 如果未">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-01-24T09:42:58.345Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Debugging Go Program">
+<meta name="twitter:description" content="概述定位Go程序的错误，通常有两种方式：  打印日志 调试  Go是编译型语言，且IDE对调试的支持不太好，绝大多数Go的初学者调试Go程序都是通过log.Printf等打印日志方式定位问题。通常过程如下：  程序panic或者报错 修改Go程序，添加打印调试日志代码 编译Go程序 重复错误出现时的操作，查看日志 如果定位问题原因，修复程序错误，删除打印debug日志代码，返回第3步的操作 如果未">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> Debugging Go Program | 技术哲学 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=55756121";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">技术哲学</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">文化、风格、艺术</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Debugging Go Program
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2019-01-24T17:24:38+08:00" content="2019-01-24">
+              2019-01-24
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/软件开发/" itemprop="url" rel="index">
+                    <span itemprop="name">软件开发</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2019/01/24/debug-go-program/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/01/24/debug-go-program/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>定位<strong>Go</strong>程序的错误，通常有两种方式：</p>
+<ul>
+<li>打印日志</li>
+<li>调试</li>
+</ul>
+<p><strong>Go</strong>是编译型语言，且<strong>IDE</strong>对调试的支持不太好，绝大多数<strong>Go</strong>的初学者调试<strong>Go</strong>程序都是通过<code>log.Printf</code>等打印日志方式定位问题。通常过程如下：</p>
+<ol>
+<li>程序<code>panic</code>或者报错</li>
+<li>修改<strong>Go</strong>程序，添加打印调试日志代码</li>
+<li>编译<strong>Go</strong>程序</li>
+<li>重复错误出现时的操作，查看日志<ol>
+<li>如果定位问题原因，修复程序错误，删除打印<code>debug</code>日志代码，返回第3步的操作</li>
+<li>如果未定位问题原因，返回到第2步的操作</li>
+</ol>
+</li>
+</ol>
+<p>如果程序比较复杂，需要反复增加日志输出才能找到问题原因。熟练的使用调试器能够提高我们面对这样问题的灵活性。此文就是介绍如何使用<strong>delve</strong>等调试器调试<strong>Go</strong>程序。本文重点是全面介绍调试相关知识，具体调试工具的操作网上相关资料已经很全面（见最后一章参考），不作为重点。</p>
+<h1 id="使用GDB调试Go程序"><a href="#使用GDB调试Go程序" class="headerlink" title="使用GDB调试Go程序"></a>使用GDB调试<strong>Go</strong>程序</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p><strong>GDB</strong>不能很好的理解<strong>Go</strong>程序。<strong>Go</strong>程序和<strong>GDB</strong>的<strong>stack management</strong>、<strong>threading</strong>、<strong>runtime</strong>模型差异很大，并可能导致调试器输出不正确的结果。因此，虽然<strong>GDB</strong>在某些场景下有用，比如调试<strong>Cgo</strong>代码、调试<strong>runtime</strong>，但是对于<strong>Go</strong>程序来说，尤其是高并发程序，<strong>GDB</strong>不是一个可靠的调试器。而且，对于<strong>Go</strong>语言项目本身来说，解决这些的问题很困难，也不是一个高优先级的事情。</p>
+<p>当你在<strong><em>Linux</em></strong>、<strong><em>macOS</em></strong>、<strong><em>FreeBSD</em></strong>、<strong><em>NetBSD</em></strong>上使用<strong>gc</strong>工具链编译和连接<strong>Go</strong>程序的时候，产生的二进制包含<strong><em>DWARFv4</em></strong>调试信息，最近版本的<strong>GDB</strong>调试器可以利用这些信息观察一个运行的进程或者<strong>core dump</strong>。</p>
+<p>可以通过<code>-w</code>标记告诉连接器去掉这些调试信息，比如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go build -ldflags &quot;-w&quot; .</span><br></pre></td></tr></table></figure>
+<p><strong>gc</strong>编译器生成的程序包含<a href="https://wiki2.org/en/Inline_function" target="_blank" rel="noopener">函数内联</a>和变量注册。这些优化可能会让<strong>gdb</strong>调试更加困难。如果你需要禁用这些优化，使用下面的参数构建程序：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go build -gcflags &quot;all=-N -l&quot; .</span><br></pre></td></tr></table></figure>
+<p>如果你想要使用<strong>gdb</strong>检查一个<strong>core dump</strong>，你可以在程序崩溃的时候触发一个dump。在支持dump的<strong>OS</strong>上，使用<code>GOTRACEBACK=crash</code>环境变量（参考<a href="https://golang.org/pkg/runtime/#hdr-Environment_Variables" target="_blank" rel="noopener">runtime package documentation</a>）。</p>
+<p><strong>Go 1.11</strong>版本中，由于编译器会产生更多更准确的调试信息，为了减少二进制的大小，<strong>DWARF</strong>调试信息编译时候会默认被压缩。这对于大多数<strong>ELF</strong>工具来说这是透明的，也得到<strong>Delve</strong>支持。但是macOS和Windows上一些工具不支持。如果要禁用<strong>DWARF</strong>压缩，可以在编译的时候传入参数<code>-ldflags &quot;-compressdwarf=false&quot;</code>。</p>
+<p><strong>Go 1.11</strong>添加了一个实验性的功能，允许在调试器中调用函数。目前这个特性仅得到<strong>Delve</strong>(version 1.1.0及以上)的支持。</p>
+<h2 id="常用命令和教程"><a href="#常用命令和教程" class="headerlink" title="常用命令和教程"></a>常用命令和教程</h2><p>可以参考下面几篇文章，这里不做赘述：</p>
+<ul>
+<li><a href="https://golang.org/doc/gdb" target="_blank" rel="noopener">Debugging Go Code with GDB</a><ul>
+<li><a href="https://golang.org/doc/go1.11#debugging" target="_blank" rel="noopener">Go 1.11 Release Notes | Debugging</a></li>
+<li><a href="https://blog.codeship.com/using-gdb-debugger-with-go/" target="_blank" rel="noopener">Using the gdb debugger with Go</a></li>
+<li><a href="https://sourceware.org/gdb/current/onlinedocs/gdb/" target="_blank" rel="noopener">GDB Tutorial | Debugging with GDB</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="使用LLDB调试Go程序"><a href="#使用LLDB调试Go程序" class="headerlink" title="使用LLDB调试Go程序"></a>使用LLDB调试Go程序</h1><h2 id="简介-1"><a href="#简介-1" class="headerlink" title="简介"></a>简介</h2><p>Mac下如果你安装XCode，应该会自动安装了LLDB，LLDB是XCode的默认调试器。LLDB的安装方法可以参考<a href="https://github.com/vadimcn/vscode-lldb/wiki/Installing-LLDB" target="_blank" rel="noopener">这里</a>。</p>
+<p>GDB的命令格式非常自由，和GDB的命令不同，LLDB命令格式非常结构化（“严格”的婉转说法）。LLDB的命令格式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;command&gt; [&lt;subcommand&gt; [&lt;subcommand&gt;...]] &lt;action&gt; [-options [option-value]] [argument [argument...]]</span><br></pre></td></tr></table></figure>
+<p>解释一下：</p>
+<ul>
+<li><code>&lt;command&gt;</code>(命令)和<code>&lt;subcommand&gt;</code>(子命令)：LLDB调试命令的名称。命令和子命令按层级结构来排列：一个命令对象为跟随其的子命令对象创建一个上下文，子命令又为其子命令创建一个上下文，依此类推。</li>
+<li><code>&lt;action&gt;</code>：执行命令的操作</li>
+<li><code>&lt;options&gt;</code>：命令选项。需要注意的是，如果aguments的第一个字母是”-“，<code>&lt;options&gt;</code>和<code>&lt;arguments&gt;</code>中间必须以”–”分隔开。所以如果你想启动一个程序，并给这个程序传入<code>-program_arg value</code>参数，可以输入<code>(lldb) process launch --stop-at-entry -- -program_arg value</code></li>
+<li><code>&lt;arguement&gt;</code>：命令的参数</li>
+<li><code>[]</code>：表示命令是可选的，可以有也可以没有</li>
+</ul>
+<p>LLDB也减少了gdb中一些命令的特殊写法，让用户更加容易理解命令的意图。可以阅读<a href="http://lldb.llvm.org/tutorial.html" target="_blank" rel="noopener">LLDB文档</a>中下面一段文字了解细节：</p>
+<blockquote>
+<p>We also tried to reduce the number of special purpose argument parsers, which sometimes forces the user to be a little more explicit about stating their intentions.</p>
+<p>……</p>
+</blockquote>
+<p>LLDB的命令同样给很多命令提供了缩写形式，可以通过<code>(lldb) help</code>查看所有的缩写命令。</p>
+<p><a href="http://lldb.llvm.org/lldb-gdb.html" target="_blank" rel="noopener">gdb和LLDB的命令之间的差别</a>可以访问这里查看。</p>
+<h2 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h2><p>使用LLDB需要熟悉的常用命令如下：</p>
+<h3 id="帮助"><a href="#帮助" class="headerlink" title="帮助"></a>帮助</h3><blockquote>
+<p>(lldb) help help<br>Show a list of all debugger commands, or give details about a specific command.</p>
+<p>Syntax: help [<cmd-name>]</cmd-name></p>
+</blockquote>
+<h3 id="使用LLDB加载一个程序"><a href="#使用LLDB加载一个程序" class="headerlink" title="使用LLDB加载一个程序"></a>使用LLDB加载一个程序</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$lldb /binary-path</span><br><span class="line">Current executable set to &apos;/binary-path&apos;(x86_64).</span><br><span class="line"></span><br><span class="line">$lldb</span><br><span class="line">(lldb) file /binary-path</span><br><span class="line">Current executable set to &apos;/binary-path&apos;(x86_64).</span><br></pre></td></tr></table></figure>
+<h3 id="设置断点（breakpoints）"><a href="#设置断点（breakpoints）" class="headerlink" title="设置断点（breakpoints）"></a>设置断点（breakpoints）</h3><p>常见的设置断点的命令如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(lldb) breakpoint set --file source-file.go --line 11</span><br><span class="line">Breakpoint 1: where = sample1`github.com/ethancai/go-debug-practice/sample1/model.(*MyStruct).Print + 19 at my_struct.go:11, address = 0x00000000010b2713</span><br></pre></td></tr></table></figure>
+<p><code>breakpoint</code>命令会创建一个<strong>逻辑的</strong>断点，一个逻辑的断点可以对应一个或者多个位置<code>location</code>。比如，通过<code>selector</code>设置的断点对应所有实现了<code>selector</code>的方法。</p>
+<p><code>breakpoint</code>命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(lldb) help breakpoint</span><br><span class="line">Commands for operating on breakpoints (see &apos;help b&apos; for shorthand.)</span><br><span class="line"></span><br><span class="line">Syntax: breakpoint &lt;subcommand&gt; [&lt;command-options&gt;]</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<h3 id="设置观察点（Watchpoints）"><a href="#设置观察点（Watchpoints）" class="headerlink" title="设置观察点（Watchpoints）"></a>设置观察点（Watchpoints）</h3><p><code>watchpoint</code>命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(lldb) help watchpoint</span><br><span class="line">  Commands for operating on watchpoints.</span><br><span class="line"></span><br><span class="line">Syntax: watchpoint &lt;subcommand&gt; [&lt;command-options&gt;]</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<h3 id="运行程序或者附着程序"><a href="#运行程序或者附着程序" class="headerlink" title="运行程序或者附着程序"></a>运行程序或者附着程序</h3><p><code>process</code>命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(lldb) help process</span><br><span class="line">  Commands for interacting with processes on the current platform.</span><br><span class="line"></span><br><span class="line">Syntax: process &lt;subcommand&gt; [&lt;subcommand-options&gt;]</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<h3 id="控制程序执行或者检查Thread状态"><a href="#控制程序执行或者检查Thread状态" class="headerlink" title="控制程序执行或者检查Thread状态"></a>控制程序执行或者检查Thread状态</h3><p><code>thread</code>命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(lldb) help thread</span><br><span class="line">  Commands for operating on one or more threads in the current process.</span><br><span class="line"></span><br><span class="line">Syntax: thread &lt;subcommand&gt; [&lt;subcommand-options&gt;]</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<h3 id="检查堆栈结构（Stack-Frame）状态"><a href="#检查堆栈结构（Stack-Frame）状态" class="headerlink" title="检查堆栈结构（Stack Frame）状态"></a>检查堆栈结构（Stack Frame）状态</h3><p><code>frame</code>命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(lldb) help frame</span><br><span class="line">  Commands for selecting and examing the current thread&apos;s stack frames.</span><br><span class="line"></span><br><span class="line">Syntax: frame &lt;subcommand&gt; [&lt;subcommand-options&gt;]</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p><code>expression</code>命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">(lldb) help expression</span><br><span class="line">  Evaluate an expression on the current thread.  Displays any returned value with LLDB&apos;s</span><br><span class="line">  default formatting.  Expects &apos;raw&apos; input (see &apos;help raw-input&apos;.)</span><br><span class="line"></span><br><span class="line">Syntax: expression &lt;cmd-options&gt; -- &lt;expr&gt;</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<h2 id="操作教程"><a href="#操作教程" class="headerlink" title="操作教程"></a>操作教程</h2><p>可以参考下面几篇文章：</p>
+<ul>
+<li>Debugging Go Code with LLDB](<a href="http://ribrdb.github.io/lldb/" target="_blank" rel="noopener">http://ribrdb.github.io/lldb/</a>): (<a href="https://colobu.com/2018/03/12/Debugging-Go-Code-with-LLDB/" target="_blank" rel="noopener">中文翻译</a>)</li>
+<li><a href="http://ios.jobbole.com/83393/" target="_blank" rel="noopener">熟练使用 LLDB，让你调试事半功倍</a></li>
+<li><a href="http://lldb.llvm.org/tutorial.html" target="_blank" rel="noopener">LLDB Tutorial</a></li>
+</ul>
+<h1 id="使用Delve调试Go程序"><a href="#使用Delve调试Go程序" class="headerlink" title="使用Delve调试Go程序"></a>使用Delve调试<strong>Go</strong>程序</h1><p>可以参考下面几篇文章：</p>
+<ul>
+<li><a href="https://blog.gopheracademy.com/advent-2015/debugging-with-delve/" target="_blank" rel="noopener">Debugging Go programs with Delve</a><ul>
+<li><a href="https://juejin.im/entry/5aa1f98d6fb9a028c522c84b" target="_blank" rel="noopener">Golang调试工具Delve</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="不要使用调试器"><a href="#不要使用调试器" class="headerlink" title="不要使用调试器"></a>不要使用调试器</h1><p>对于调试器，一众计算机大牛都给出了明确而且强烈的建议：不要使用调试器。</p>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Linus_Torvalds" target="_blank" rel="noopener">Linus Torvalds</a>, the creator of Linux, <a href="https://lwn.net/2000/0914/a/lt-debugger.php3" target="_blank" rel="noopener">does not use a debugger</a>.</li>
+<li><a href="https://en.wikipedia.org/wiki/Robert_Cecil_Martin" target="_blank" rel="noopener">Robert C. Martin</a>, one of the inventors of agile programming, thinks that debuggers are <a href="http://www.artima.com/weblogs/viewpost.jsp?thread=23476" target="_blank" rel="noopener">a wasteful timesink</a>.</li>
+<li><a href="https://en.wikipedia.org/wiki/John_Graham-Cumming" target="_blank" rel="noopener">John Graham-Cumming</a> <a href="http://blog.jgc.org/2007/01/tao-of-debugging.html" target="_blank" rel="noopener">hates debuggers</a>.</li>
+<li><a href="https://en.wikipedia.org/wiki/Brian_Kernighan" target="_blank" rel="noopener">Brian W. Kernighan</a> and <a href="https://en.wikipedia.org/wiki/Rob_Pike" target="_blank" rel="noopener">Rob Pike</a> wrote that <em>stepping through a program less productive than thinking harder and adding output statements and self-checking code at critical places</em>. Kernighan once wrote that <em>the most effective debugging tool is still careful thought, coupled with judiciously placed print statements</em>.</li>
+<li>The author of Python, <a href="https://en.wikipedia.org/wiki/Guido_van_Rossum" target="_blank" rel="noopener">Guido van Rossum</a> has been quoted as saying that uses print statements for 90% of his debugging.</li>
+</ul>
+<p>调试技术是一众纯手工的技术，诞生于计算机程序的规模还不是很大的时期。在当今软件规模不断扩展的情况下，调试无法解决软件质量问题。深入的思考、合理的架构、优美的代码、充分的单元测试才是提高软件质量的正确方向。调试应该仅作为调查问题最后一种办法。</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li>Debugging  Go Program<ul>
+<li><a href="https://golang.org/doc/gdb" target="_blank" rel="noopener">Debugging Go Code with GDB</a><ul>
+<li><a href="https://golang.org/doc/go1.11#debugging" target="_blank" rel="noopener">Go 1.11 Release Notes | Debugging</a></li>
+<li><a href="https://blog.codeship.com/using-gdb-debugger-with-go/" target="_blank" rel="noopener">Using the gdb debugger with Go</a></li>
+<li><a href="https://sourceware.org/gdb/current/onlinedocs/gdb/" target="_blank" rel="noopener">GDB Tutorial | Debugging with GDB</a></li>
+</ul>
+</li>
+<li><a href="http://ribrdb.github.io/lldb/" target="_blank" rel="noopener">Debugging Go Code with LLDB</a>: (<a href="https://colobu.com/2018/03/12/Debugging-Go-Code-with-LLDB/" target="_blank" rel="noopener">中文翻译</a>)<ul>
+<li><a href="http://ios.jobbole.com/83393/" target="_blank" rel="noopener">熟练使用 LLDB，让你调试事半功倍</a></li>
+<li><a href="http://lldb.llvm.org/tutorial.html" target="_blank" rel="noopener">LLDB Tutorial</a></li>
+</ul>
+</li>
+<li><a href="https://blog.gopheracademy.com/advent-2015/debugging-with-delve/" target="_blank" rel="noopener">Debugging Go programs with Delve</a><ul>
+<li><a href="https://juejin.im/entry/5aa1f98d6fb9a028c522c84b" target="_blank" rel="noopener">Golang调试工具Delve</a></li>
+</ul>
+</li>
+<li>Post-mortem debugging<ul>
+<li><a href="https://fntlnz.wtf/post/gopostmortem/" target="_blank" rel="noopener">Go Post-mortem</a></li>
+<li><a href="https://rakyll.org/coredumps/" target="_blank" rel="noopener">Debugging Go core dumps</a></li>
+</ul>
+</li>
+<li>Debugging Concurrent Programs<ul>
+<li><a href="https://users.soe.ucsc.edu/~dph/mypubs/debugConcProg89.pdf" target="_blank" rel="noopener">Debugging Concurrent Programs</a></li>
+<li><a href="https://golang.org/doc/articles/race_detector.html" target="_blank" rel="noopener">Data Race Detector</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Other<ul>
+<li><a href="https://golang.org/doc/diagnostics.html" target="_blank" rel="noopener">Diagnostics</a>: Profiling, Tracing, Debugging, Rutime statistics and events</li>
+<li>Build Go Program<ul>
+<li><a href="https://golang.org/cmd/go/#hdr-Compile_packages_and_dependencies" target="_blank" rel="noopener">Compile packages and dependencies</a></li>
+</ul>
+</li>
+<li>ELF format and Tools<ul>
+<li><a href="https://linux-audit.com/elf-binaries-on-linux-understanding-and-analysis/" target="_blank" rel="noopener">The 101 of ELF files on Linux: Understanding and Analysis</a></li>
+<li><a href="https://wiki2.org/en/Executable_and_Linkable_Format" target="_blank" rel="noopener">Executable and Linkable Format</a></li>
+</ul>
+</li>
+<li>Methodology<ul>
+<li><a href="https://lemire.me/blog/2016/06/21/i-do-not-use-a-debugger/" target="_blank" rel="noopener">I don’t use a debugger</a></li>
+<li><a href="https://ttboj.wordpress.com/2016/02/15/debugging-golang-programs/" target="_blank" rel="noopener">Debugging golang programs</a></li>
+</ul>
+</li>
+<li>Debugging in IDE<ul>
+<li>VSCode<ul>
+<li><a href="https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code" target="_blank" rel="noopener">Debugging Go code using VS Code</a></li>
+<li><a href="https://flaviocopes.com/go-debugging-vscode-delve/" target="_blank" rel="noopener">DEBUGGING GO WITH VS CODE AND DELVE</a></li>
+</ul>
+</li>
+<li>Goland<ul>
+<li><a href="https://www.jetbrains.com/help/go/debugging-code.html" target="_blank" rel="noopener">Goland Help | Debugging code</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Tools<ul>
+<li><a href="https://www.gnu.org/software/gdb/" target="_blank" rel="noopener">GDB</a></li>
+<li><a href="https://lldb.llvm.org/" target="_blank" rel="noopener">LLDB</a></li>
+<li><a href="https://github.com/go-delve/delve" target="_blank" rel="noopener">Delve</a>: Delve is a debugger for the Go programming language</li>
+<li><a href="https://github.com/davecgh/go-spew" target="_blank" rel="noopener">Spew</a>: Implements a deep pretty printer for Go data structures to aid in debugging</li>
+<li><a href="https://github.com/maruel/panicparse" target="_blank" rel="noopener">panicparse</a>: Crash your app in style (Golang)</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/coding/" rel="tag">#coding</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/12/29/Error-Handling-in-Go/" rel="next" title="Go语言中的错误处理（Error Handling in Go）">
+                <i class="fa fa-chevron-left"></i> Go语言中的错误处理（Error Handling in Go）
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Ethan Cai" />
+          <p class="site-author-name" itemprop="name">Ethan Cai</p>
+          <p class="site-description motion-element" itemprop="description">兼容并包、学以致用</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">17</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/EthanCai" target="_blank">
+                  
+                    <i class="fa fa-github"></i> GitHub
+                  
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用GDB调试Go程序"><span class="nav-number">2.</span> <span class="nav-text">使用GDB调试Go程序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介"><span class="nav-number">2.1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常用命令和教程"><span class="nav-number">2.2.</span> <span class="nav-text">常用命令和教程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用LLDB调试Go程序"><span class="nav-number">3.</span> <span class="nav-text">使用LLDB调试Go程序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介-1"><span class="nav-number">3.1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常用命令"><span class="nav-number">3.2.</span> <span class="nav-text">常用命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#帮助"><span class="nav-number">3.2.1.</span> <span class="nav-text">帮助</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用LLDB加载一个程序"><span class="nav-number">3.2.2.</span> <span class="nav-text">使用LLDB加载一个程序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置断点（breakpoints）"><span class="nav-number">3.2.3.</span> <span class="nav-text">设置断点（breakpoints）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置观察点（Watchpoints）"><span class="nav-number">3.2.4.</span> <span class="nav-text">设置观察点（Watchpoints）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行程序或者附着程序"><span class="nav-number">3.2.5.</span> <span class="nav-text">运行程序或者附着程序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#控制程序执行或者检查Thread状态"><span class="nav-number">3.2.6.</span> <span class="nav-text">控制程序执行或者检查Thread状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#检查堆栈结构（Stack-Frame）状态"><span class="nav-number">3.2.7.</span> <span class="nav-text">检查堆栈结构（Stack Frame）状态</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#操作教程"><span class="nav-number">3.3.</span> <span class="nav-text">操作教程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用Delve调试Go程序"><span class="nav-number">4.</span> <span class="nav-text">使用Delve调试Go程序</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#不要使用调试器"><span class="nav-number">5.</span> <span class="nav-text">不要使用调试器</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ethan Cai</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'ethancaigithubio';
+      var disqus_identifier = '2019/01/24/debug-go-program/';
+      var disqus_title = 'Debugging Go Program';
+      var disqus_url = 'http://ethancai.github.io/2019/01/24/debug-go-program/';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+        run_disqus_script('embed.js');
+      
+    </script>
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

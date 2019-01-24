@@ -226,6 +226,194 @@
             
               
                 
+                <a class="post-title-link" href="/2016/08/06/configure-smallest-elasticsearch-cluster/" itemprop="url">
+                  学习Elasticsearch之4：配置一个3节点Elasticsearch集群(不区分主节点和数据节点)
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-08-06T09:46:38+08:00" content="2016-08-06">
+              2016-08-06
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/软件开发/" itemprop="url" rel="index">
+                    <span itemprop="name">软件开发</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2016/08/06/configure-smallest-elasticsearch-cluster/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/08/06/configure-smallest-elasticsearch-cluster/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <img src="/2016/08/06/configure-smallest-elasticsearch-cluster/es-cluster.jpg">
+<h1 id="安装版本"><a href="#安装版本" class="headerlink" title="安装版本"></a>安装版本</h1><p>Elasticsearch（通过<code>apt</code>方式安装）:</p>
+<ul>
+<li>Elasticsearch 2.3.2</li>
+</ul>
+<p>Jar插件:</p>
+<ul>
+<li><a href="https://github.com/medcl/elasticsearch-analysis-ik" target="_blank" rel="noopener">elasticsearch-analysis-ik</a>: 1.9.2</li>
+<li><a href="https://github.com/medcl/elasticsearch-analysis-pinyin" target="_blank" rel="noopener">elasticsearch-analysis-pinyin</a>: 1.7.2</li>
+<li><a href="https://github.com/medcl/elasticsearch-analysis-stconvert" target="_blank" rel="noopener">elasticsearch-analysis-stconvert</a>: 1.8.2</li>
+</ul>
+<p>Site插件:</p>
+<ul>
+<li><a href="https://github.com/mobz/elasticsearch-head" target="_blank" rel="noopener">elasticsearch-head</a>: 最新版</li>
+</ul>
+<h1 id="各节点服务器"><a href="#各节点服务器" class="headerlink" title="各节点服务器"></a>各节点服务器</h1><ul>
+<li>Node1<ul>
+<li>集群名：<code>search-1</code></li>
+<li>节点名：<code>node-1</code></li>
+<li>内网IP: <code>192.168.31.171</code></li>
+</ul>
+</li>
+<li>Node2<ul>
+<li>集群名：<code>search-1</code></li>
+<li>节点名：<code>node-2</code></li>
+<li>内网IP: <code>192.168.31.221</code></li>
+</ul>
+</li>
+<li>Node3<ul>
+<li>集群名：<code>search-1</code></li>
+<li>节点名：<code>node-3</code></li>
+<li>内网IP: <code>192.168.31.154</code></li>
+</ul>
+</li>
+</ul>
+<h1 id="各节点安装的插件"><a href="#各节点安装的插件" class="headerlink" title="各节点安装的插件"></a>各节点安装的插件</h1><table>
+<thead>
+<tr>
+<th style="text-align:left">Node</th>
+<th style="text-align:left">Installed Plugins</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Node1</td>
+<td style="text-align:left">ik, pinyin, stconvert, head</td>
+</tr>
+<tr>
+<td style="text-align:left">Node1</td>
+<td style="text-align:left">ik, pinyin, stconvert</td>
+</tr>
+<tr>
+<td style="text-align:left">Node1</td>
+<td style="text-align:left">ik, pinyin, stconvert</td>
+</tr>
+</tbody>
+</table>
+<h1 id="各节点配置"><a href="#各节点配置" class="headerlink" title="各节点配置"></a>各节点配置</h1><p>三节点的配置：</p>
+<ul>
+<li>Node 1</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">cluster.name:</span> <span class="string">search-1</span></span><br><span class="line"><span class="string">node.name:</span> <span class="string">node-1</span></span><br><span class="line"></span><br><span class="line"><span class="string">node.master:</span> <span class="literal">true</span></span><br><span class="line"><span class="string">node.data:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="string">index.number_of_shards:</span> <span class="number">3</span></span><br><span class="line"><span class="string">index.number_of_replicas:</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>                           <span class="comment"># 绑定本机所有端口</span></span><br><span class="line"></span><br><span class="line"><span class="string">discovery.zen.ping.multicast.enabled:</span> <span class="literal">false</span>     <span class="comment"># 禁止多播</span></span><br><span class="line"><span class="string">discovery.zen.minimum_master_nodes:</span> <span class="number">2</span>           <span class="comment"># 配置最少节点数量，防止脑裂</span></span><br><span class="line"><span class="string">discovery.zen.ping.unicast.hosts:</span> <span class="string">['192.168.31.171',</span> <span class="string">'192.168.31.221'</span><span class="string">,</span> <span class="string">'192.168.31.154'</span><span class="string">]</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>Node 2</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">cluster.name:</span> <span class="string">search-1</span></span><br><span class="line"><span class="string">node.name:</span> <span class="string">node-2</span></span><br><span class="line"></span><br><span class="line"><span class="string">node.master:</span> <span class="literal">true</span></span><br><span class="line"><span class="string">node.data:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="string">index.number_of_shards:</span> <span class="number">3</span></span><br><span class="line"><span class="string">index.number_of_replicas:</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>                           <span class="comment"># 绑定本机所有端口</span></span><br><span class="line"></span><br><span class="line"><span class="string">discovery.zen.ping.multicast.enabled:</span> <span class="literal">false</span>     <span class="comment"># 禁止多播</span></span><br><span class="line"><span class="string">discovery.zen.minimum_master_nodes:</span> <span class="number">2</span>           <span class="comment"># 配置最少节点数量，防止脑裂</span></span><br><span class="line"><span class="string">discovery.zen.ping.unicast.hosts:</span> <span class="string">['192.168.31.171',</span> <span class="string">'192.168.31.221'</span><span class="string">,</span> <span class="string">'192.168.31.154'</span><span class="string">]</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>Node 3</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">cluster.name:</span> <span class="string">search-1</span></span><br><span class="line"><span class="string">node.name:</span> <span class="string">node-3</span></span><br><span class="line"></span><br><span class="line"><span class="string">node.master:</span> <span class="literal">true</span></span><br><span class="line"><span class="string">node.data:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="string">index.number_of_shards:</span> <span class="number">3</span></span><br><span class="line"><span class="string">index.number_of_replicas:</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>                           <span class="comment"># 绑定本机所有端口</span></span><br><span class="line"></span><br><span class="line"><span class="string">discovery.zen.ping.multicast.enabled:</span> <span class="literal">false</span>     <span class="comment"># 禁止多播</span></span><br><span class="line"><span class="string">discovery.zen.minimum_master_nodes:</span> <span class="number">2</span>           <span class="comment"># 配置最少节点数量，防止脑裂</span></span><br><span class="line"><span class="string">discovery.zen.ping.unicast.hosts:</span> <span class="string">['192.168.31.171',</span> <span class="string">'192.168.31.221'</span><span class="string">,</span> <span class="string">'192.168.31.154'</span><span class="string">]</span></span><br></pre></td></tr></table></figure>
+<h1 id="常用操作"><a href="#常用操作" class="headerlink" title="常用操作"></a>常用操作</h1><p>上传插件</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-ik-1.9.2 ubuntu@192.168.31.171:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-pinyin-1.7.2 ubuntu@192.168.31.171:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-stconvert-1.8.2 ubuntu@192.168.31.171:~/</span><br><span class="line"></span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-ik-1.9.2 ubuntu@192.168.31.221:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-pinyin-1.7.2 ubuntu@192.168.31.221:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-stconvert-1.8.2 ubuntu@192.168.31.221:~/</span><br><span class="line"></span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-ik-1.9.2 ubuntu@192.168.31.154:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-pinyin-1.7.2 ubuntu@192.168.31.154:~/</span><br><span class="line">$ scp -r -i ~/dev.pem elasticsearch-analysis-stconvert-1.8.2 ubuntu@192.168.31.154:~/</span><br></pre></td></tr></table></figure>
+<p>拷贝插件到<code>/usr/share/elasticsearch/plugins</code>目录</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ mv elasticsearch-analysis-ik-1.9.2 /usr/share/elasticsearch/plugins/</span><br><span class="line">$ mv elasticsearch-analysis-pinyin-1.7.2 /usr/share/elasticsearch/plugins/</span><br><span class="line">$ mv elasticsearch-analysis-stconvert-1.8.2 /usr/share/elasticsearch/plugins/</span><br><span class="line"></span><br><span class="line">$ chown -R elasticsearch:elasticsearch elasticsearch-analysis-ik-1.9.2/             <span class="comment"># 修改插件访问权限，允许elasticsearch服务访问插件</span></span><br><span class="line">$ chown -R elasticsearch:elasticsearch elasticsearch-analysis-pinyin-1.7.2/         <span class="comment"># 修改插件访问权限，允许elasticsearch服务访问插件</span></span><br><span class="line">$ chown -R elasticsearch:elasticsearch elasticsearch-analysis-stconvert-1.8.2/      <span class="comment"># 修改插件访问权限，允许elasticsearch服务访问插件</span></span><br></pre></td></tr></table></figure>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2016/08/06/elastic-basic-concepts/" itemprop="url">
                   学习Elasticsearch之3：Elastcisearch基础概念
                 </a>
@@ -1961,7 +2149,7 @@ digraph G {
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">16</span>
+              <span class="site-state-item-count">17</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -2027,7 +2215,7 @@ digraph G {
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

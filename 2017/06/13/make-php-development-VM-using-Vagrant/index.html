@@ -317,7 +317,7 @@
 <h2 id="如何构建PHP开发环境Vagrant-Box"><a href="#如何构建PHP开发环境Vagrant-Box" class="headerlink" title="如何构建PHP开发环境Vagrant Box"></a>如何构建PHP开发环境Vagrant Box</h2><h3 id="构建php-dev-vm-5-6-30-box"><a href="#构建php-dev-vm-5-6-30-box" class="headerlink" title="构建php-dev-vm-5.6.30.box"></a>构建<code>php-dev-vm-5.6.30.box</code></h3><p>编写<code>Vagrantfile</code>:</p>
 <p>见<a href="./src/PHP-5.6.30/Vagrantfile">这里</a></p>
 <p>构建<code>Vagrant Box</code>:</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="comment"># start vm</span></span><br><span class="line">&gt; vagrant up</span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># config mysql root password</span></span><br><span class="line">&gt; mysql_secure_installation</span><br><span class="line">&gt; <span class="comment"># todo: add more config statements</span></span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># create vagrant box</span></span><br><span class="line">&gt; vagrant package --output <span class="string">"php-dev-vm-5.6.30.box"</span> &#123;vm_id&#125; &amp;&amp; mv php-dev-vm-5.6.30.box ../../box/</span><br></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="comment"># start vm</span></span><br><span class="line">&gt; vagrant up</span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># config mysql root password</span></span><br><span class="line">&gt; mysql_secure_installation</span><br><span class="line">&gt; <span class="comment"># <span class="doctag">todo:</span> add more config statements</span></span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># create vagrant box</span></span><br><span class="line">&gt; vagrant package --output <span class="string">"php-dev-vm-5.6.30.box"</span> &#123;vm_id&#125; &amp;&amp; mv php-dev-vm-5.6.30.box ../../box/</span><br></pre></td></tr></table></figure>
 <h2 id="如何使用Vagrant-Box启动PHP开发环境虚拟机"><a href="#如何使用Vagrant-Box启动PHP开发环境虚拟机" class="headerlink" title="如何使用Vagrant Box启动PHP开发环境虚拟机"></a>如何使用Vagrant Box启动PHP开发环境虚拟机</h2><h3 id="使用-php-dev-vm-5-6-30-box"><a href="#使用-php-dev-vm-5-6-30-box" class="headerlink" title="使用 php-dev-vm-5.6.30.box"></a>使用 <code>php-dev-vm-5.6.30.box</code></h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="comment"># build php-dev-vm-5.6.30.box or download box from ftp://10.75.87.202/php-dev-vm-5.6.30.box (get the url from Ethan if not available)</span></span><br><span class="line">&gt; wget ftp://10.75.87.202/php-dev-vm-5.6.30.box &amp;&amp; mv php-dev-vm-5.6.30.box ./box/php-dev-vm-5.6.30.box</span><br><span class="line"></span><br><span class="line">&gt; <span class="built_in">cd</span> work/php56</span><br><span class="line">&gt; vagrant box remove <span class="string">"../../box/php-dev-vm-5.6.30.box"</span> || <span class="literal">true</span> &amp;&amp; vagrant up  <span class="comment"># ignore error when box not exists</span></span><br><span class="line"></span><br><span class="line">&gt; <span class="comment"># the password of mysql `root` user is `eVkU,iO);5R&gt;`</span></span><br></pre></td></tr></table></figure>
 <h1 id="References"><a href="#References" class="headerlink" title="References"></a>References</h1><ul>
 <li>Vagrant: <a href="https://www.vagrantup.com/docs/index.html" target="_blank" rel="noopener">https://www.vagrantup.com/docs/index.html</a></li>
@@ -451,7 +451,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">16</span>
+              <span class="site-state-item-count">17</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -534,7 +534,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
