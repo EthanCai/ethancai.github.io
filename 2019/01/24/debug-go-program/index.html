@@ -65,7 +65,7 @@
 <meta property="og:site_name" content="技术哲学">
 <meta property="og:description" content="概述定位Go程序的错误，通常有两种方式：  打印日志 调试  Go是编译型语言，且IDE对调试的支持不太好，绝大多数Go的初学者调试Go程序都是通过log.Printf等打印日志方式定位问题。通常过程如下：  程序panic或者报错 修改Go程序，添加打印调试日志代码 编译Go程序 重复错误出现时的操作，查看日志 如果定位问题原因，修复程序错误，删除打印debug日志代码，返回第3步的操作 如果未">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-01-24T09:42:58.345Z">
+<meta property="og:updated_time" content="2019-01-28T02:52:30.139Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Debugging Go Program">
 <meta name="twitter:description" content="概述定位Go程序的错误，通常有两种方式：  打印日志 调试  Go是编译型语言，且IDE对调试的支持不太好，绝大多数Go的初学者调试Go程序都是通过log.Printf等打印日志方式定位问题。通常过程如下：  程序panic或者报错 修改Go程序，添加打印调试日志代码 编译Go程序 重复错误出现时的操作，查看日志 如果定位问题原因，修复程序错误，删除打印debug日志代码，返回第3步的操作 如果未">
@@ -306,7 +306,7 @@
 </ol>
 </li>
 </ol>
-<p>如果程序比较复杂，需要反复增加日志输出才能找到问题原因。熟练的使用调试器能够提高我们面对这样问题的灵活性。此文就是介绍如何使用<strong>delve</strong>等调试器调试<strong>Go</strong>程序。本文重点是全面介绍调试相关知识，具体调试工具的操作网上相关资料已经很全面（见最后一章参考），不作为重点。</p>
+<p>如果程序比较复杂，需要反复增加日志输出才能找到问题原因。熟练的使用调试器能够提高我们面对这样问题的灵活性。本文重点总结介绍调试相关知识，具体调试操作网上相关资料已经很全面（见最后一章参考），不作为重点。</p>
 <h1 id="使用GDB调试Go程序"><a href="#使用GDB调试Go程序" class="headerlink" title="使用GDB调试Go程序"></a>使用GDB调试<strong>Go</strong>程序</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p><strong>GDB</strong>不能很好的理解<strong>Go</strong>程序。<strong>Go</strong>程序和<strong>GDB</strong>的<strong>stack management</strong>、<strong>threading</strong>、<strong>runtime</strong>模型差异很大，并可能导致调试器输出不正确的结果。因此，虽然<strong>GDB</strong>在某些场景下有用，比如调试<strong>Cgo</strong>代码、调试<strong>runtime</strong>，但是对于<strong>Go</strong>程序来说，尤其是高并发程序，<strong>GDB</strong>不是一个可靠的调试器。而且，对于<strong>Go</strong>语言项目本身来说，解决这些的问题很困难，也不是一个高优先级的事情。</p>
 <p>当你在<strong><em>Linux</em></strong>、<strong><em>macOS</em></strong>、<strong><em>FreeBSD</em></strong>、<strong><em>NetBSD</em></strong>上使用<strong>gc</strong>工具链编译和连接<strong>Go</strong>程序的时候，产生的二进制包含<strong><em>DWARFv4</em></strong>调试信息，最近版本的<strong>GDB</strong>调试器可以利用这些信息观察一个运行的进程或者<strong>core dump</strong>。</p>
 <p>可以通过<code>-w</code>标记告诉连接器去掉这些调试信息，比如：</p>
