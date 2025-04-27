@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ethancai.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="前言一个人不会两次掉进同一个坑里，但是如果他（她）忘记了坑的位置，那就不一定了。 这篇文章记录了最近使用Golang处理JSON遇到的一些坑。 坑1号坑：omitempty的行为C#中最常用的JSON序列化类库Newtonsoft.Json中，把一个类的实例序列化成JSON，如果我们不想让某个属性输出到JSON中，可以通过property annotation或者ShouldSerialize m">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang中遇到的一些关于JSON处理的坑">
+<meta property="og:url" content="http://ethancai.github.io/2016/06/23/bad-parts-about-json-serialization-in-Golang/index.html">
+<meta property="og:site_name" content="一家之言">
+<meta property="og:description" content="前言一个人不会两次掉进同一个坑里，但是如果他（她）忘记了坑的位置，那就不一定了。 这篇文章记录了最近使用Golang处理JSON遇到的一些坑。 坑1号坑：omitempty的行为C#中最常用的JSON序列化类库Newtonsoft.Json中，把一个类的实例序列化成JSON，如果我们不想让某个属性输出到JSON中，可以通过property annotation或者ShouldSerialize m">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.json.org/img/value.png">
+<meta property="article:published_time" content="2016-06-23T00:09:39.000Z">
+<meta property="article:modified_time" content="2025-04-27T17:04:49.541Z">
+<meta property="article:author" content="Ethan Cai">
+<meta property="article:tag" content="golang">
+<meta property="article:tag" content="json">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.json.org/img/value.png">
+
+
+<link rel="canonical" href="http://ethancai.github.io/2016/06/23/bad-parts-about-json-serialization-in-Golang/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://ethancai.github.io/2016/06/23/bad-parts-about-json-serialization-in-Golang/","path":"2016/06/23/bad-parts-about-json-serialization-in-Golang/","title":"Golang中遇到的一些关于JSON处理的坑"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Golang中遇到的一些关于JSON处理的坑 | 一家之言</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">一家之言</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">读万卷书，行万里路</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9D%91"><span class="nav-number">2.</span> <span class="nav-text">坑</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1%E5%8F%B7%E5%9D%91%EF%BC%9Aomitempty%E7%9A%84%E8%A1%8C%E4%B8%BA"><span class="nav-number">2.1.</span> <span class="nav-text">1号坑：omitempty的行为</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2%E5%8F%B7%E5%9D%91%EF%BC%9AJSON%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%88%90interface-%E5%AF%B9Number%E7%9A%84%E5%A4%84%E7%90%86"><span class="nav-number">2.2.</span> <span class="nav-text">2号坑：JSON反序列化成interface{}对Number的处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3%E5%8F%B7%E5%9D%91%EF%BC%9A%E9%80%89%E6%8B%A9%E4%BB%80%E4%B9%88%E6%A0%BC%E5%BC%8F%E8%A1%A8%E7%A4%BA%E6%97%A5%E6%9C%9F"><span class="nav-number">2.3.</span> <span class="nav-text">3号坑：选择什么格式表示日期</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Ethan Cai</p>
+  <div class="site-description" itemprop="description">Stay hungry, stay foolish</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://ethancai.github.io/2016/06/23/bad-parts-about-json-serialization-in-Golang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Ethan Cai">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一家之言">
+      <meta itemprop="description" content="Stay hungry, stay foolish">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Golang中遇到的一些关于JSON处理的坑 | 一家之言">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Golang中遇到的一些关于JSON处理的坑
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2016-06-23 08:09:39" itemprop="dateCreated datePublished" datetime="2016-06-23T08:09:39+08:00">2016-06-23</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-04-28 01:04:49" itemprop="dateModified" datetime="2025-04-28T01:04:49+08:00">2025-04-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E7%BC%96%E7%A8%8B%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">编程开发</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>一个人不会两次掉进同一个坑里，但是如果他（她）忘记了坑的位置，那就不一定了。</p>
+<p>这篇文章记录了最近使用Golang处理JSON遇到的一些坑。</p>
+<h1 id="坑"><a href="#坑" class="headerlink" title="坑"></a>坑</h1><h2 id="1号坑：omitempty的行为"><a href="#1号坑：omitempty的行为" class="headerlink" title="1号坑：omitempty的行为"></a>1号坑：<code>omitempty</code>的行为</h2><p>C#中最常用的JSON序列化类库<code>Newtonsoft.Json</code>中，把一个类的实例序列化成JSON，如果我们不想让某个属性输出到JSON中，可以通过<code>property annotation</code>或者<code>ShouldSerialize method</code>等方法，告知序列化程序。如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 通过ShouldSerialize method指示不要序列化ObsoleteSetting属性</span></span><br><span class="line"><span class="keyword">class</span> <span class="title">Config</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> Fizz ObsoleteSetting &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">bool</span> <span class="title">ShouldSerializeObsoleteSetting</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 通过JsonIgnore的annotation指示不需要序列化ObsoleteSetting属性</span></span><br><span class="line"><span class="keyword">class</span> <span class="title">Config</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="meta">JsonIgnore</span>]</span><br><span class="line">    <span class="keyword">public</span> Fizz ObsoleteSetting &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Bang ReplacementSetting &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>关于<code>Newtonsoft.Json</code>的Conditional Property Serialization的更多内容参考：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://www.newtonsoft.com/json/help/html/ConditionalProperties.htm">Conditional Property Serialization</a></li>
+<li><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/11564091/making-a-property-deserialize-but-not-serialize-with-json-net">Making a property deserialize but not serialize with json.net</a></li>
+</ul>
+<p>开始使用Golang的时候，以为<code>omitempty</code>的行为和C#中一样用来控制是否序列化字段，结果使用的时候碰了一头钉子。回头阅读<a target="_blank" rel="noopener" href="http://docs.studygolang.com/pkg/encoding/json/#Marshal">encoding&#x2F;json package的官方文档</a>，找到对<code>omitempty</code>行为的描述：</p>
+<blockquote>
+<p>Struct values encode as JSON objects. Each exported struct field becomes a member of the object unless</p>
+<ul>
+<li>the field’s tag is “-“, or</li>
+<li>the field is empty and its tag specifies the “omitempty” option.</li>
+</ul>
+<p>The empty values are false, 0, any nil pointer or interface value, and any array, slice, map, or string of length zero. The object’s default key string is the struct field name but can be specified in the struct field’s tag value. The “json” key in the struct field’s tag value is the key name, followed by an optional comma and options. Examples:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Field is ignored by this package.</span></span><br><span class="line">Field <span class="type">int</span> <span class="string">`json:&quot;-&quot;`</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Field appears in JSON as key &quot;myName&quot;.</span></span><br><span class="line">Field <span class="type">int</span> <span class="string">`json:&quot;myName&quot;`</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Field appears in JSON as key &quot;myName&quot; and</span></span><br><span class="line"><span class="comment">// the field is omitted from the object if its value is empty,</span></span><br><span class="line"><span class="comment">// as defined above.</span></span><br><span class="line">Field <span class="type">int</span> <span class="string">`json:&quot;myName,omitempty&quot;`</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Field appears in JSON as key &quot;Field&quot; (the default), but</span></span><br><span class="line"><span class="comment">// the field is skipped if empty.</span></span><br><span class="line"><span class="comment">// Note the leading comma.</span></span><br><span class="line">Field <span class="type">int</span> <span class="string">`json:&quot;,omitempty&quot;`</span></span><br></pre></td></tr></table></figure></blockquote>
+<p>Golang中，如果指定一个<code>field</code>序列化成JSON的变量名字为<code>-</code>，则序列化的时候自动忽略这个<code>field</code>。这种用法，才是和上面<code>JsonIgnore</code>的用法的作用是一样的。</p>
+<p>而<code>omitempty</code>的作用是当一个<code>field</code>的值是<code>empty</code>的时候，序列化JSON时候忽略这个<code>field</code>（<code>Newtonsoft.Json</code>的类似用法参考<a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/6507889/how-to-ignore-a-property-in-class-if-null-using-json-net">这里</a>和<a target="_blank" rel="noopener" href="https://dotnetfiddle.net/VXqRnm">例子</a>）。这里需要注意的是关于<code>emtpty</code>的定义：</p>
+<blockquote>
+<p>The empty values are false, 0, any nil pointer or interface value, and any array, slice, map, or string of length zero.</p>
+</blockquote>
+<p>通过下面的例子，来加深对<code>empty values</code>的了解：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;bytes&quot;</span></span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;log&quot;</span></span><br><span class="line">    <span class="string">&quot;os&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> S1 <span class="keyword">struct</span> &#123;</span><br><span class="line">    I1 <span class="type">int</span></span><br><span class="line">    I2 <span class="type">int</span> <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line"></span><br><span class="line">    F1 <span class="type">float64</span></span><br><span class="line">    F2 <span class="type">float64</span> <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line"></span><br><span class="line">    S1 <span class="type">string</span></span><br><span class="line">    S2 <span class="type">string</span> <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line"></span><br><span class="line">    B1 <span class="type">bool</span></span><br><span class="line">    B2 <span class="type">bool</span> <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line"></span><br><span class="line">    Slice1 []<span class="type">int</span></span><br><span class="line">    Slice2 []<span class="type">int</span> <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    Slice3 []<span class="type">int</span> <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line"></span><br><span class="line">    Map1 <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span></span><br><span class="line">    Map2 <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span> <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    Map3 <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span> <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line"></span><br><span class="line">    O1 <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">    O2 <span class="keyword">interface</span>&#123;&#125; <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    O3 <span class="keyword">interface</span>&#123;&#125; <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    O4 <span class="keyword">interface</span>&#123;&#125; <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    O5 <span class="keyword">interface</span>&#123;&#125; <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    O6 <span class="keyword">interface</span>&#123;&#125; <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    O7 <span class="keyword">interface</span>&#123;&#125; <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    O8 <span class="keyword">interface</span>&#123;&#125; <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line"></span><br><span class="line">    P1 *<span class="type">int</span></span><br><span class="line">    P2 *<span class="type">int</span>               <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    P3 *<span class="type">int</span>               <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    P4 *<span class="type">float64</span>           <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    P5 *<span class="type">string</span>            <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    P6 *<span class="type">bool</span>              <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    P7 *[]<span class="type">int</span>             <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">    P8 *<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span> <span class="string">`json:&quot;,omitempty&quot;`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">    p3 := <span class="number">0</span></span><br><span class="line">    p4 := <span class="type">float64</span>(<span class="number">0</span>)</span><br><span class="line">    p5 := <span class="string">&quot;&quot;</span></span><br><span class="line">    p6 := <span class="literal">false</span></span><br><span class="line">    p7 := []<span class="type">int</span>&#123;&#125;</span><br><span class="line">    p8 := <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line">    s1 := S1&#123;</span><br><span class="line">        I1: <span class="number">0</span>,</span><br><span class="line">        I2: <span class="number">0</span>,</span><br><span class="line"></span><br><span class="line">        F1: <span class="number">0</span>,</span><br><span class="line">        F2: <span class="number">0</span>,</span><br><span class="line"></span><br><span class="line">        S1: <span class="string">&quot;&quot;</span>,</span><br><span class="line">        S2: <span class="string">&quot;&quot;</span>,</span><br><span class="line"></span><br><span class="line">        B1: <span class="literal">false</span>,</span><br><span class="line">        B2: <span class="literal">false</span>,</span><br><span class="line"></span><br><span class="line">        Slice1: []<span class="type">int</span>&#123;&#125;,</span><br><span class="line">        Slice2: <span class="literal">nil</span>,</span><br><span class="line">        Slice3: []<span class="type">int</span>&#123;&#125;,</span><br><span class="line"></span><br><span class="line">        Map1: <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span>&#123;&#125;,</span><br><span class="line">        Map2: <span class="literal">nil</span>,</span><br><span class="line">        Map3: <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span>&#123;&#125;,</span><br><span class="line"></span><br><span class="line">        O1: <span class="literal">nil</span>,</span><br><span class="line">        O2: <span class="literal">nil</span>,</span><br><span class="line">        O3: <span class="type">int</span>(<span class="number">0</span>),</span><br><span class="line">        O4: <span class="type">float64</span>(<span class="number">0</span>),</span><br><span class="line">        O5: <span class="string">&quot;&quot;</span>,</span><br><span class="line">        O6: <span class="literal">false</span>,</span><br><span class="line">        O7: []<span class="type">int</span>&#123;&#125;,</span><br><span class="line">        O8: <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span>&#123;&#125;,</span><br><span class="line"></span><br><span class="line">        P1: <span class="literal">nil</span>,</span><br><span class="line">        P2: <span class="literal">nil</span>,</span><br><span class="line">        P3: &amp;p3,</span><br><span class="line">        P4: &amp;p4,</span><br><span class="line">        P5: &amp;p5,</span><br><span class="line">        P6: &amp;p6,</span><br><span class="line">        P7: &amp;p7,</span><br><span class="line">        P8: &amp;p8,</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    b, err := json.Marshal(s1)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        log.Printf(<span class="string">&quot;marshal error: %v&quot;</span>, err)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> out bytes.Buffer</span><br><span class="line">    json.Indent(&amp;out, b, <span class="string">&quot;&quot;</span>, <span class="string">&quot;\t&quot;</span>)</span><br><span class="line">    out.WriteTo(os.Stdout)</span><br><span class="line">    <span class="comment">//Output:</span></span><br><span class="line">    <span class="comment">//&#123;</span></span><br><span class="line">    <span class="comment">//	&quot;I1&quot;: 0,</span></span><br><span class="line">    <span class="comment">//	&quot;F1&quot;: 0,</span></span><br><span class="line">    <span class="comment">//	&quot;S1&quot;: &quot;&quot;,</span></span><br><span class="line">    <span class="comment">//	&quot;B1&quot;: false,</span></span><br><span class="line">    <span class="comment">//	&quot;Slice1&quot;: [],</span></span><br><span class="line">    <span class="comment">//	&quot;Map1&quot;: &#123;&#125;,</span></span><br><span class="line">    <span class="comment">//	&quot;O1&quot;: null,</span></span><br><span class="line">    <span class="comment">//	&quot;O3&quot;: 0,</span></span><br><span class="line">    <span class="comment">//	&quot;O4&quot;: 0,</span></span><br><span class="line">    <span class="comment">//	&quot;O5&quot;: &quot;&quot;,</span></span><br><span class="line">    <span class="comment">//	&quot;O6&quot;: false,</span></span><br><span class="line">    <span class="comment">//	&quot;O7&quot;: [],</span></span><br><span class="line">    <span class="comment">//	&quot;O8&quot;: &#123;&#125;,</span></span><br><span class="line">    <span class="comment">//	&quot;P1&quot;: null,</span></span><br><span class="line">    <span class="comment">//	&quot;P2&quot;: 0</span></span><br><span class="line">    <span class="comment">//&#125;%</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><em>点击<a target="_blank" rel="noopener" href="https://play.golang.org/p/6y_m27r8EO">这里</a>执行上面的程序</em></p>
+<p>关于<code>empty value</code>的定义，这里面隐藏了一些坑。下面通过一个例子来说明。</p>
+<p>假设我们有一个社交类App，通过Restful API形式从服务端获取当前登录用户基本信息及粉丝数量。如果服务端对Response中<code>User</code>对象的定义如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> User <span class="keyword">struct</span> &#123;</span><br><span class="line">    ID        <span class="type">int</span> <span class="string">`json:&quot;id&quot;`</span>                  <span class="comment">// 用户id</span></span><br><span class="line">    <span class="comment">// 其它field</span></span><br><span class="line">    FansCount <span class="type">int</span> <span class="string">`json:&quot;fansCount,omitempty&quot;`</span> <span class="comment">// 粉丝数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果正在使用App时一个还没有粉丝的用户，访问Restful API的得到Response如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="number">1000386</span><span class="punctuation">,</span></span><br><span class="line">    ...</span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>这时候你会发现Response的User对象中没有<code>fansCount</code>，因为<code>fansCount</code>是个<code>int</code>类型且值为0，序列化的时候会被忽略。语义上，<code>User</code>对象中没有<code>fansCount</code>应该理解为<strong>粉丝数量未知</strong>，而不是<strong>没有粉丝</strong>。</p>
+<p>如果我们希望做到能够区分<strong>粉丝数未知</strong>和<strong>没有粉丝</strong>两种情况，需要修改<code>User</code>的定义：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> User <span class="keyword">struct</span> &#123;</span><br><span class="line">    ID        <span class="type">int</span>  <span class="string">`json:&quot;id&quot;`</span>                  <span class="comment">// 用户id</span></span><br><span class="line">    <span class="comment">// 其它field</span></span><br><span class="line">    FansCount *<span class="type">int</span> <span class="string">`json:&quot;fansCount,omitempty&quot;`</span> <span class="comment">// 粉丝数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>将<code>FansCount</code>修改为指针类型，如果为<code>nil</code>，表示粉丝数未知；如果为整数（包括0），表示粉丝数。</p>
+<p>这么修改语义上没有漏洞了，但是代码中要给<code>FansCount</code>赋值的时候却要多一句废话。必须先将从数据源查询出粉丝数赋给一个变量，然后再将变量的指针传给<code>FansCount</code>。代码读起来实在是啰嗦：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// FansCount是int类型时候</span></span><br><span class="line">user := dataAccess.GetUserInfo(userId)</span><br><span class="line">user.FansCount = dataAccess.GetFansCount(userId)</span><br><span class="line"></span><br><span class="line"><span class="comment">// FansCount是*int类型的时候</span></span><br><span class="line">user := dataAccess.GetUserInfo(userId)</span><br><span class="line">fansCount := dataAccess.GetFansCount(userId)</span><br><span class="line">user.FansCount = &amp;fansCount</span><br></pre></td></tr></table></figure>
+
+<h2 id="2号坑：JSON反序列化成interface-对Number的处理"><a href="#2号坑：JSON反序列化成interface-对Number的处理" class="headerlink" title="2号坑：JSON反序列化成interface{}对Number的处理"></a>2号坑：JSON反序列化成interface{}对Number的处理</h2><p><a target="_blank" rel="noopener" href="http://json.org/">JSON的规范</a>中，对于数字类型，并不区分是整型还是浮点型。</p>
+<p><img src="https://www.json.org/img/value.png"></p>
+<p>对于如下JSON文本:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;ethancai&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;fansCount&quot;</span><span class="punctuation">:</span> <span class="number">9223372036854775807</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>如果反序列化的时候指定明确的结构体和变量类型</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> User <span class="keyword">struct</span> &#123;</span><br><span class="line">    Name      <span class="type">string</span></span><br><span class="line">    FansCount <span class="type">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">const</span> jsonStream = <span class="string">`</span></span><br><span class="line"><span class="string">        &#123;&quot;name&quot;:&quot;ethancai&quot;, &quot;fansCount&quot;: 9223372036854775807&#125;</span></span><br><span class="line"><span class="string">    `</span></span><br><span class="line">    <span class="keyword">var</span> user User  <span class="comment">// 类型为User</span></span><br><span class="line">    err := json.Unmarshal([]<span class="type">byte</span>(jsonStream), &amp;user)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">&quot;error:&quot;</span>, err)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fmt.Printf(<span class="string">&quot;%+v \n&quot;</span>, user)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Output:</span></span><br><span class="line"><span class="comment">//  &#123;Name:ethancai FansCount:9223372036854775807&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><em>点击<a target="_blank" rel="noopener" href="https://play.golang.org/p/203egccrea">这里</a>执行上面的程序</em></p>
+<p>如果反序列化不指定结构体类型或者变量类型，则JSON中的数字类型，默认被反序列化成<code>float64</code>类型：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;reflect&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">const</span> jsonStream = <span class="string">`</span></span><br><span class="line"><span class="string">        &#123;&quot;name&quot;:&quot;ethancai&quot;, &quot;fansCount&quot;: 9223372036854775807&#125;</span></span><br><span class="line"><span class="string">    `</span></span><br><span class="line">    <span class="keyword">var</span> user <span class="keyword">interface</span>&#123;&#125;  <span class="comment">// 不指定反序列化的类型</span></span><br><span class="line">    err := json.Unmarshal([]<span class="type">byte</span>(jsonStream), &amp;user)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">&quot;error:&quot;</span>, err)</span><br><span class="line">    &#125;</span><br><span class="line">    m := user.(<span class="keyword">map</span>[<span class="type">string</span>]<span class="keyword">interface</span>&#123;&#125;)</span><br><span class="line"></span><br><span class="line">    fansCount := m[<span class="string">&quot;fansCount&quot;</span>]</span><br><span class="line"></span><br><span class="line">    fmt.Printf(<span class="string">&quot;%+v \n&quot;</span>, reflect.TypeOf(fansCount).Name())</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%+v \n&quot;</span>, fansCount.(<span class="type">float64</span>))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Output:</span></span><br><span class="line"><span class="comment">// 	float64</span></span><br><span class="line"><span class="comment">//  	9.223372036854776e+18</span></span><br></pre></td></tr></table></figure>
+
+<p><em>点击<a target="_blank" rel="noopener" href="https://play.golang.org/p/l4GzgA4WDA">这里</a>执行上面的程序</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> User <span class="keyword">struct</span> &#123;</span><br><span class="line">    Name      <span class="type">string</span></span><br><span class="line">    FansCount <span class="keyword">interface</span>&#123;&#125;  <span class="comment">// 不指定FansCount变量的类型</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">const</span> jsonStream = <span class="string">`</span></span><br><span class="line"><span class="string">        &#123;&quot;name&quot;:&quot;ethancai&quot;, &quot;fansCount&quot;: 9223372036854775807&#125;</span></span><br><span class="line"><span class="string">    `</span></span><br><span class="line">    <span class="keyword">var</span> user User</span><br><span class="line">    err := json.Unmarshal([]<span class="type">byte</span>(jsonStream), &amp;user)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">&quot;error:&quot;</span>, err)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fmt.Printf(<span class="string">&quot;%+v \n&quot;</span>, user)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Output:</span></span><br><span class="line"><span class="comment">// 	&#123;Name:ethancai FansCount:9.223372036854776e+18&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><em>点击<a target="_blank" rel="noopener" href="https://play.golang.org/p/SoD6SOGuCM">这里</a>执行上面的程序</em></p>
+<p>从上面的程序可以发现，如果<code>fansCount</code>精度比较高，反序列化成<code>float64</code>类型的数值时存在丢失精度的问题。</p>
+<p>如何解决这个问题，先看下面程序：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;reflect&quot;</span></span><br><span class="line">    <span class="string">&quot;strings&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">const</span> jsonStream = <span class="string">`</span></span><br><span class="line"><span class="string">        &#123;&quot;name&quot;:&quot;ethancai&quot;, &quot;fansCount&quot;: 9223372036854775807&#125;</span></span><br><span class="line"><span class="string">    `</span></span><br><span class="line"></span><br><span class="line">    decoder := json.NewDecoder(strings.NewReader(jsonStream))</span><br><span class="line">    decoder.UseNumber()    <span class="comment">// UseNumber causes the Decoder to unmarshal a number into an interface&#123;&#125; as a Number instead of as a float64.</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> user <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">    <span class="keyword">if</span> err := decoder.Decode(&amp;user); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">&quot;error:&quot;</span>, err)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    m := user.(<span class="keyword">map</span>[<span class="type">string</span>]<span class="keyword">interface</span>&#123;&#125;)</span><br><span class="line">    fansCount := m[<span class="string">&quot;fansCount&quot;</span>]</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%+v \n&quot;</span>, reflect.TypeOf(fansCount).PkgPath() + <span class="string">&quot;.&quot;</span> + reflect.TypeOf(fansCount).Name())</span><br><span class="line"></span><br><span class="line">     v, err := fansCount.(json.Number).Int64()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">&quot;error:&quot;</span>, err)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%+v \n&quot;</span>, v)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Output:</span></span><br><span class="line"><span class="comment">// 	encoding/json.Number</span></span><br><span class="line"><span class="comment">// 	9223372036854775807</span></span><br></pre></td></tr></table></figure>
+<p><em>点击<a target="_blank" rel="noopener" href="https://play.golang.org/p/KYrFshVMFD">这里</a>执行上面的程序</em></p>
+<p>上面的程序，使用了<code>func (*Decoder) UseNumber</code>方法告诉反序列化JSON的数字类型的时候，不要直接转换成<code>float64</code>，而是转换成<code>json.Number</code>类型。<code>json.Number</code>内部实现机制是什么，我们来看看源码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// A Number represents a JSON number literal.</span></span><br><span class="line"><span class="keyword">type</span> Number <span class="type">string</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// String returns the literal text of the number.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(n Number)</span></span> String() <span class="type">string</span> &#123; <span class="keyword">return</span> <span class="type">string</span>(n) &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Float64 returns the number as a float64.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(n Number)</span></span> Float64() (<span class="type">float64</span>, <span class="type">error</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> strconv.ParseFloat(<span class="type">string</span>(n), <span class="number">64</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Int64 returns the number as an int64.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(n Number)</span></span> Int64() (<span class="type">int64</span>, <span class="type">error</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> strconv.ParseInt(<span class="type">string</span>(n), <span class="number">10</span>, <span class="number">64</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>json.Number</code>本质是字符串，反序列化的时候将JSON的数值先转成<code>json.Number</code>，其实是一种延迟处理的手段，待后续逻辑需要时候，再把<code>json.Number</code>转成<code>float64</code>或者<code>int64</code>。</p>
+<p>对比其它语言，Golang对JSON反序列化处理真是易用性太差（“蛋疼”）。</p>
+<p>JavaScript中所有的数值都是双精度浮点数（参考<a target="_blank" rel="noopener" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Numbers_and_dates">这里</a>），反序列化JSON的时候不用考虑数值类型匹配问题。这里多说两句，JSON的全名JavaScript Object Notation（从名字上就能看出和JavaScript的关系非常紧密），发明人是Douglas Crockford，如果你自称熟悉JavaScript而不知道<a target="_blank" rel="noopener" href="http://www.infoq.com/cn/news/2010/02/qconbeijing2010-douglas">Douglas Crockford</a>是谁，就像是自称是苹果粉丝却不知道乔布斯是谁。</p>
+<p>C#语言的第三方JSON处理library <a target="_blank" rel="noopener" href="http://www.newtonsoft.com/json">Json.NET</a>反序列化JSON对数值的处理也比Golang要优雅的多：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> System;</span><br><span class="line"><span class="keyword">using</span> Newtonsoft.Json;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">string</span> json = <span class="string">@&quot;&#123;</span></span><br><span class="line"><span class="string">  &#x27;Name&#x27;: &#x27;Ethan&#x27;,</span></span><br><span class="line"><span class="string">  &#x27;FansCount&#x27;: 121211,</span></span><br><span class="line"><span class="string">  &#x27;Price&#x27;: 99.99</span></span><br><span class="line"><span class="string">&#125;&quot;</span>;</span><br><span class="line"></span><br><span class="line">        Product m = JsonConvert.DeserializeObject&lt;Product&gt;(json);</span><br><span class="line"></span><br><span class="line">        Console.WriteLine(m.FansCount);</span><br><span class="line">        Console.WriteLine(m.FansCount.GetType().FullName);</span><br><span class="line"></span><br><span class="line">        Console.WriteLine(m.Price);</span><br><span class="line">        Console.WriteLine(m.Price.GetType().FullName);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Product</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> Name</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span>;</span><br><span class="line">        <span class="keyword">set</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">object</span> FansCount</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span>;</span><br><span class="line">        <span class="keyword">set</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">object</span> Price</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span>;</span><br><span class="line">        <span class="keyword">set</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Output:</span></span><br><span class="line"><span class="comment">//      121211</span></span><br><span class="line"><span class="comment">//      System.Int64</span></span><br><span class="line"><span class="comment">//      99.99</span></span><br><span class="line"><span class="comment">//      System.Double</span></span><br></pre></td></tr></table></figure>
+
+<p><em>点击<a target="_blank" rel="noopener" href="https://dotnetfiddle.net/IrlMae">这里</a>执行上面的程序</em></p>
+<p><code>Json.NET</code>在反序列化的时候自动识别数值是浮点型还是整型，这一点对开发者非常友好。</p>
+<h2 id="3号坑：选择什么格式表示日期"><a href="#3号坑：选择什么格式表示日期" class="headerlink" title="3号坑：选择什么格式表示日期"></a>3号坑：选择什么格式表示日期</h2><p>JSON的规范中并没有日期类型，不同语言的library对日期序列化的处理也不完全一致：</p>
+<p>Go语言：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;os&quot;</span></span><br><span class="line">    <span class="string">&quot;time&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">type</span> Product <span class="keyword">struct</span> &#123;</span><br><span class="line">        Name      <span class="type">string</span></span><br><span class="line">        CreatedAt time.Time</span><br><span class="line">    &#125;</span><br><span class="line">    pdt := Product&#123;</span><br><span class="line">        Name:      <span class="string">&quot;Reds&quot;</span>,</span><br><span class="line">        CreatedAt: time.Now(),</span><br><span class="line">    &#125;</span><br><span class="line">    b, err := json.Marshal(pdt)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">&quot;error:&quot;</span>, err)</span><br><span class="line">    &#125;</span><br><span class="line">    os.Stdout.Write(b)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Output</span></span><br><span class="line"><span class="comment">//      &#123;&quot;Name&quot;:&quot;Reds&quot;,&quot;CreatedAt&quot;:&quot;2016-06-27T07:40:54.69292134+08:00&quot;&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>JavaScript语言：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ node</span><br><span class="line">&gt; var jo = &#123; name: <span class="string">&quot;ethan&quot;</span>, createdAt: Date.now() &#125;;</span><br><span class="line">undefined</span><br><span class="line">&gt; JSON.stringify(jo)</span><br><span class="line"><span class="string">&#x27;&#123;&quot;name&quot;:&quot;ethan&quot;,&quot;createdAt&quot;:1466984665633&#125;&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>C#语言：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> System;</span><br><span class="line"><span class="keyword">using</span> Newtonsoft.Json;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        Product product = <span class="keyword">new</span> Product();</span><br><span class="line">        product.Name = <span class="string">&quot;Apple&quot;</span>;</span><br><span class="line">        product.CreatedAt = DateTime.Now;</span><br><span class="line"></span><br><span class="line">        <span class="built_in">string</span> json = JsonConvert.SerializeObject(product,</span><br><span class="line">                            Newtonsoft.Json.Formatting.Indented,</span><br><span class="line">                            <span class="keyword">new</span> JsonSerializerSettings &#123;</span><br><span class="line">                                NullValueHandling = NullValueHandling.Ignore</span><br><span class="line">                            &#125;);</span><br><span class="line">        Console.WriteLine(json);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Product</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> Name</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span>;</span><br><span class="line">        <span class="keyword">set</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> DateTime CreatedAt</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span>;</span><br><span class="line">        <span class="keyword">set</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Output:</span></span><br><span class="line"><span class="comment">//      &#123;</span></span><br><span class="line"><span class="comment">//        &quot;Name&quot;: &quot;Apple&quot;,</span></span><br><span class="line"><span class="comment">//        &quot;CreatedAt&quot;: &quot;2016-06-26T23:46:57.3244307+00:00&quot;</span></span><br><span class="line"><span class="comment">//      &#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>Go的<code>encoding/json</code> package、C#的Json.NET默认把日期类型序列化成<a target="_blank" rel="noopener" href="http://www.w3.org/TR/NOTE-datetime">ISO 8601标准</a>的格式，JavaScript默认把<code>Date</code>序列化从1970年1月1日0点0分0秒的毫秒数。但JavaScript的<a target="_blank" rel="noopener" href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString"><code>dateObj.toISOString()</code></a>能够将日期类型转成ISO格式的字符串，<a target="_blank" rel="noopener" href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Date/parse"><code>Date.parse(dateString)</code></a>方法能够将ISO格式的日期字符串转成日期。</p>
+<p>个人认为ISO格式的日期字符串可读性更好，但序列化和反序列化时的性能应该比整数更低。这一点从Go语言中<code>time.Time</code>的定义看出来。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Time <span class="keyword">struct</span> &#123;</span><br><span class="line">    <span class="comment">// sec gives the number of seconds elapsed since</span></span><br><span class="line">    <span class="comment">// January 1, year 1 00:00:00 UTC.</span></span><br><span class="line">    sec <span class="type">int64</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// nsec specifies a non-negative nanosecond</span></span><br><span class="line">    <span class="comment">// offset within the second named by Seconds.</span></span><br><span class="line">    <span class="comment">// It must be in the range [0, 999999999].</span></span><br><span class="line">    nsec <span class="type">int32</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// loc specifies the Location that should be used to</span></span><br><span class="line">    <span class="comment">// determine the minute, hour, month, day, and year</span></span><br><span class="line">    <span class="comment">// that correspond to this Time.</span></span><br><span class="line">    <span class="comment">// Only the zero Time has a nil Location.</span></span><br><span class="line">    <span class="comment">// In that case it is interpreted to mean UTC.</span></span><br><span class="line">    loc *Location</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>具体选择哪种形式在JSON中表示日期，有如下几点需要注意：</p>
+<ul>
+<li>选择标准格式。曾记得.NET Framework官方序列化JSON的方法中，会把日期转成如<code>&quot;\/Date(1343660352227+0530)\/&quot;</code>的专有格式，这样的专有格式对跨语言的访问特别不友好。</li>
+<li>如果你倾向性能，可以使用整数。如果你倾向可读性，可以使用ISO字符串。</li>
+<li>如果使用整数表示日期，而你的应用又是需要支持跨时区的，注意一定要是从<code>1970-1-1 00:00:00 UTC</code>开始计算的毫秒数，而不是当前时区的<code>1970-1-1 00:00:00</code>。</li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p>文章：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://docs.studygolang.com/pkg/encoding/json/">package encoding&#x2F;json in Go</a></li>
+<li><a target="_blank" rel="noopener" href="http://docs.studygolang.com/src/encoding/json/example_test.go">http://docs.studygolang.com/src/encoding/json/example_test.go</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.golang.org/json-and-go">The Go Blog: JSON and Go</a></li>
+<li><a target="_blank" rel="noopener" href="https://gobyexample.com/json">Go by example: JSON</a></li>
+<li><a target="_blank" rel="noopener" href="http://attilaolah.eu/2013/11/29/json-decoding-in-go/">JSON decoding in Go</a></li>
+<li><a target="_blank" rel="noopener" href="https://eager.io/blog/go-and-json/">go and json</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.goinggo.net/2014/01/decode-json-documents-in-go.html">Decode JSON Documents In Go</a></li>
+<li><a target="_blank" rel="noopener" href="https://journal.paul.querna.org/articles/2014/03/31/ffjson-faster-json-in-go/">ffjson: faster JSON serialization for Golang</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.slideshare.net/albertstrasheim/serialization-in-go">Serialization in Go</a></li>
+</ul>
+<p>第三方类库：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/pquerna/ffjson">ffjson</a>: faster JSON serialization for Go</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/bitly/go-simplejson">go-simplejson</a>: a Go package to interact with arbitrary JSON</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/antonholmquist/jason">Jason</a>: Easy-to-use JSON Library for Go</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/mailru/easyjson">easyjson</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/Jeffail/gabs">gabs</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/buger/jsonparser">jsonparser</a></li>
+</ul>
+<p>工具：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://mholt.github.io/json-to-go/">JSON-to-Go</a>: instantly converts JSON into a Go type definition</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/golang/" rel="tag"># golang</a>
+              <a href="/tags/json/" rel="tag"># json</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2016/04/20/experiences-about-develop-dlog/" rel="prev" title="记一次结对开发Golang组件的过程">
+                  <i class="fa fa-angle-left"></i> 记一次结对开发Golang组件的过程
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/12/29/error-handling-in-go/" rel="next" title="Go语言中的错误处理（Error Handling in Go）">
+                  Go语言中的错误处理（Error Handling in Go） <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Ethan Cai</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

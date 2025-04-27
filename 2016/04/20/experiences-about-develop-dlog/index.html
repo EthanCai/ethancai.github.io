@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ethancai.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="目录   前言 dlog的用途 对dlog的一些非功能性需求 碰到问题及解决方案 何时使用panic，何时使用return error 如何实现一个logger只能接收对应类型的data log 如何实现批量发送data log 如何实现对Logger.Log方法的调用超时机制 如何在logger没有收到新msg情况下，保证buf中的数据依然会定期发送给AWS Kinesis 如何向程序外部暴露运">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记一次结对开发Golang组件的过程">
+<meta property="og:url" content="http://ethancai.github.io/2016/04/20/experiences-about-develop-dlog/index.html">
+<meta property="og:site_name" content="一家之言">
+<meta property="og:description" content="目录   前言 dlog的用途 对dlog的一些非功能性需求 碰到问题及解决方案 何时使用panic，何时使用return error 如何实现一个logger只能接收对应类型的data log 如何实现批量发送data log 如何实现对Logger.Log方法的调用超时机制 如何在logger没有收到新msg情况下，保证buf中的数据依然会定期发送给AWS Kinesis 如何向程序外部暴露运">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ethancai.github.io/2016/04/20/experiences-about-develop-dlog/channel.png">
+<meta property="og:image" content="http://ethancai.github.io/2016/04/20/experiences-about-develop-dlog/use_channel.png">
+<meta property="og:image" content="http://ethancai.github.io/2016/04/20/experiences-about-develop-dlog/expvarmon_screen.png">
+<meta property="og:image" content="http://ethancai.github.io/2016/04/20/experiences-about-develop-dlog/2016-04-21_07-12-24.png">
+<meta property="og:image" content="http://ethancai.github.io/2016/04/20/experiences-about-develop-dlog/2016-04-21_07-12-40.png">
+<meta property="article:published_time" content="2016-04-19T18:09:39.000Z">
+<meta property="article:modified_time" content="2025-04-27T17:04:49.536Z">
+<meta property="article:author" content="Ethan Cai">
+<meta property="article:tag" content="golang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ethancai.github.io/2016/04/20/experiences-about-develop-dlog/channel.png">
+
+
+<link rel="canonical" href="http://ethancai.github.io/2016/04/20/experiences-about-develop-dlog/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://ethancai.github.io/2016/04/20/experiences-about-develop-dlog/","path":"2016/04/20/experiences-about-develop-dlog/","title":"记一次结对开发Golang组件的过程"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>记一次结对开发Golang组件的过程 | 一家之言</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">一家之言</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">读万卷书，行万里路</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95"><span class="nav-number">1.</span> <span class="nav-text">目录</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">2.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#dlog%E7%9A%84%E7%94%A8%E9%80%94"><span class="nav-number">3.</span> <span class="nav-text">dlog的用途</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AF%B9dlog%E7%9A%84%E4%B8%80%E4%BA%9B%E9%9D%9E%E5%8A%9F%E8%83%BD%E6%80%A7%E9%9C%80%E6%B1%82"><span class="nav-number">4.</span> <span class="nav-text">对dlog的一些非功能性需求</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A2%B0%E5%88%B0%E9%97%AE%E9%A2%98%E5%8F%8A%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">5.</span> <span class="nav-text">碰到问题及解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%95%E6%97%B6%E4%BD%BF%E7%94%A8panic%EF%BC%8C%E4%BD%95%E6%97%B6%E4%BD%BF%E7%94%A8return-error"><span class="nav-number">5.1.</span> <span class="nav-text">何时使用panic，何时使用return error</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#panic%E7%9A%84%E6%89%A7%E8%A1%8C%E6%9C%BA%E5%88%B6"><span class="nav-number">5.1.1.</span> <span class="nav-text">panic的执行机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#return-error%E7%9A%84%E6%89%A7%E8%A1%8C%E6%9C%BA%E5%88%B6"><span class="nav-number">5.1.2.</span> <span class="nav-text">return error的执行机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dlog%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E5%8E%9F%E5%88%99"><span class="nav-number">5.1.3.</span> <span class="nav-text">dlog错误处理原则</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AAlogger%E5%8F%AA%E8%83%BD%E6%8E%A5%E6%94%B6%E5%AF%B9%E5%BA%94%E7%B1%BB%E5%9E%8B%E7%9A%84data-log"><span class="nav-number">5.2.</span> <span class="nav-text">如何实现一个logger只能接收对应类型的data log</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E5%8F%91%E9%80%81data-log"><span class="nav-number">5.3.</span> <span class="nav-text">如何实现批量发送data log</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%AF%B9Logger-Log%E6%96%B9%E6%B3%95%E7%9A%84%E8%B0%83%E7%94%A8%E8%B6%85%E6%97%B6%E6%9C%BA%E5%88%B6"><span class="nav-number">5.4.</span> <span class="nav-text">如何实现对Logger.Log方法的调用超时机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%9C%A8logger%E6%B2%A1%E6%9C%89%E6%94%B6%E5%88%B0%E6%96%B0msg%E6%83%85%E5%86%B5%E4%B8%8B%EF%BC%8C%E4%BF%9D%E8%AF%81buf%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E4%BE%9D%E7%84%B6%E4%BC%9A%E5%AE%9A%E6%9C%9F%E5%8F%91%E9%80%81%E7%BB%99AWS-Kinesis"><span class="nav-number">5.5.</span> <span class="nav-text">如何在logger没有收到新msg情况下，保证buf中的数据依然会定期发送给AWS Kinesis</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%90%91%E7%A8%8B%E5%BA%8F%E5%A4%96%E9%83%A8%E6%9A%B4%E9%9C%B2%E8%BF%90%E8%A1%8C%E6%8C%87%E6%A0%87"><span class="nav-number">5.6.</span> <span class="nav-text">如何向程序外部暴露运行指标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%9C%A8%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E4%B8%AD%E5%AE%9E%E7%8E%B0Setup%E5%92%8CTearDown"><span class="nav-number">5.7.</span> <span class="nav-text">如何在单元测试中实现Setup和TearDown</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0kinesisMock"><span class="nav-number">5.8.</span> <span class="nav-text">如何实现kinesisMock</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E6%A8%A1%E6%8B%9FAWS-Kinesis%E5%93%8D%E5%BA%94%E6%85%A2%E6%88%96%E8%80%85%E4%B8%8D%E5%8F%AF%E7%94%A8"><span class="nav-number">5.9.</span> <span class="nav-text">如何模拟AWS Kinesis响应慢或者不可用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E4%BA%A4%E5%88%B0%E4%BB%A3%E7%A0%81%E5%BA%93%E4%B8%AD%E7%9A%84%E6%B5%8B%E8%AF%95%E4%BB%A3%E7%A0%81%E6%98%AF%E5%90%A6%E5%8F%AF%E4%BB%A5%E4%BF%9D%E7%95%99log-Print"><span class="nav-number">5.10.</span> <span class="nav-text">提交到代码库中的测试代码是否可以保留log.Print</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%B8%A9%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E5%9D%91"><span class="nav-number">6.</span> <span class="nav-text">踩过的一些坑</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9C%AA%E6%9D%A5%E5%8F%AF%E4%BB%A5%E4%BC%98%E5%8C%96%E7%9A%84%E5%9C%B0%E6%96%B9"><span class="nav-number">7.</span> <span class="nav-text">未来可以优化的地方</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">8.</span> <span class="nav-text">参考</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%8B%9B%E8%81%98%E6%B6%88%E6%81%AF"><span class="nav-number">9.</span> <span class="nav-text">招聘消息</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Ethan Cai</p>
+  <div class="site-description" itemprop="description">Stay hungry, stay foolish</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://ethancai.github.io/2016/04/20/experiences-about-develop-dlog/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Ethan Cai">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一家之言">
+      <meta itemprop="description" content="Stay hungry, stay foolish">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="记一次结对开发Golang组件的过程 | 一家之言">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          记一次结对开发Golang组件的过程
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2016-04-20 02:09:39" itemprop="dateCreated datePublished" datetime="2016-04-20T02:09:39+08:00">2016-04-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-04-28 01:04:49" itemprop="dateModified" datetime="2025-04-28T01:04:49+08:00">2025-04-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E7%BC%96%E7%A8%8B%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">编程开发</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h1><!-- TOC depthFrom:1 depthTo:2 withLinks:0 updateOnSave:1 orderedList:0 -->
+
+<ul>
+<li>前言</li>
+<li><code>dlog</code>的用途</li>
+<li>对<code>dlog</code>的一些非功能性需求</li>
+<li>碰到问题及解决方案<ul>
+<li>何时使用<code>panic</code>，何时使用<code>return error</code></li>
+<li>如何实现一个<code>logger</code>只能接收对应类型的<code>data log</code></li>
+<li>如何实现批量发送<code>data log</code></li>
+<li>如何实现对<code>Logger.Log</code>方法的调用超时机制</li>
+<li>如何在<code>logger</code>没有收到新<code>msg</code>情况下，保证<code>buf</code>中的数据依然会定期发送给AWS Kinesis</li>
+<li>如何向程序外部暴露运行指标</li>
+<li>如何在单元测试中实现<code>Setup</code>和<code>TearDown</code></li>
+<li>如何实现<code>kinesisMock</code></li>
+<li>如何模拟AWS Kinesis响应慢或者不可用</li>
+<li>提交到代码库中的测试代码是否可以保留<code>log.Print</code></li>
+</ul>
+</li>
+<li>踩过的一些坑</li>
+<li>未来可以优化的地方</li>
+<li>参考</li>
+</ul>
+<!-- /TOC -->
+
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>本文记录了前段时间我和<a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000002416822">王益</a>使用Go语言合作开发一个log组件<a target="_blank" rel="noopener" href="https://github.com/topicai/dlog">dlog</a>的过程中学到的一些知识。在整个合作开发的过程中，王益严谨认真的态度，对开发质量的严格要求，给我留下了极其深刻的印象。能够和王益这样的顶级工程师切磋技艺，对我学习Go语言帮助非常大。也谨以此文表达对王益的感谢。</p>
+<blockquote>
+<p>注：本文假设读者已经对Go语法已经有基本了解。</p>
+</blockquote>
+<h1 id="dlog的用途"><a href="#dlog的用途" class="headerlink" title="dlog的用途"></a><code>dlog</code>的用途</h1><p>首先引用项目<strong>readme文档</strong>的第一段文字介绍一下<code>dlog</code>的用途：</p>
+<blockquote>
+<p>dlog is a Go package for distributed structure logging using Amazon AWS Kinesis&#x2F;Firehose.</p>
+</blockquote>
+<p>更多介绍和设计请阅读<a target="_blank" rel="noopener" href="https://github.com/topicai/dlog/blob/develop/README.md">readme文档</a></p>
+<p><code>dlog</code>主要是用来记录程序的<code>data log</code>的这样一个Golang package，那什么是<code>data log</code>？这里先简要解释一下。一般程序运行过程中主要产生两类日志：</p>
+<ul>
+<li><code>status log</code>：主要用于帮助调试、定位程序Bug、或者找到性能瓶颈，比如方法调用日志、错误日志、方法执行时间日志等</li>
+<li><code>data log</code>：主要用于记录用户行为，收集的<code>data log</code>用于后期的个性化搜索、智能推荐等，比如搜索行为、点击行为等</li>
+</ul>
+<h1 id="对dlog的一些非功能性需求"><a href="#对dlog的一些非功能性需求" class="headerlink" title="对dlog的一些非功能性需求"></a>对<code>dlog</code>的一些非功能性需求</h1><ul>
+<li>每一种类型的<code>data log</code>对应一种<code>logger</code>，一个<code>logger</code>只能记录对应类型的<code>data log</code></li>
+<li><code>dlog</code>内部发生的错误，不能影响调用的程序代码的执行<ul>
+<li>应考虑到AWS Kinesis服务响应慢或者不可用的场景（暂未实现）</li>
+</ul>
+</li>
+<li>程序代码中通过调用<code>dlog</code>的方法记录<code>data log</code>，<code>dlog</code>的方法不能阻塞调用的程序代码的执行（这一点<code>dlog</code>暂时未满足要求，需要后期改进）</li>
+<li>AWS Kinesis提供两个API接收数据，一个是<a target="_blank" rel="noopener" href="http://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecord.html">PutRecord</a>, 另一个是<a target="_blank" rel="noopener" href="http://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html">PutRecords</a>，为了减少对Kinesis的调用次数，采用后者批量发送<code>data log</code><ul>
+<li><code>PutRecords</code>对一次调用的<code>record</code>数量限制是<code>500</code>，每个<code>record</code>大小必须小于等于1MB，整个<code>request</code>的大小必须小于等于5MB</li>
+<li>每一个Kinesis Stream能够承受的最大TPS和写数据量，与这个stream拥有的shard的数量有关。一个shard支持最大TPS是<code>1000 records per second</code>， 写数据量是<code>1MB per second</code></li>
+</ul>
+</li>
+<li>通过单元测试保证功能正确性</li>
+</ul>
+<h1 id="碰到问题及解决方案"><a href="#碰到问题及解决方案" class="headerlink" title="碰到问题及解决方案"></a>碰到问题及解决方案</h1><h2 id="何时使用panic，何时使用return-error"><a href="#何时使用panic，何时使用return-error" class="headerlink" title="何时使用panic，何时使用return error"></a>何时使用<code>panic</code>，何时使用<code>return error</code></h2><p>先看看<code>panic</code>和<code>return error</code>的执行机制。</p>
+<h3 id="panic的执行机制"><a href="#panic的执行机制" class="headerlink" title="panic的执行机制"></a><code>panic</code>的执行机制</h3><p><code>panic</code>会中断当前<code>goroutine</code>的执行，如果不对<code>panic</code>的错误进行<code>recover</code>，那么整个进程都会崩溃。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;log&quot;</span></span><br><span class="line">    <span class="string">&quot;time&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">        log.Panic(<span class="string">&quot;some error before work2&quot;</span>)</span><br><span class="line">        fmt.Println(<span class="string">&quot;do some work2&quot;</span>)</span><br><span class="line">    &#125;()</span><br><span class="line"></span><br><span class="line">    time.Sleep(time.Second)</span><br><span class="line">    fmt.Println(<span class="string">&quot;do some work1&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><em>执行上面代码请点击<a target="_blank" rel="noopener" href="https://play.golang.org/p/off1y9tBax">这里</a></em></p>
+<p>可以通过<code>recover</code>捕捉当前<code>goroutine</code>中<code>panic</code>的错误并进行错误处理，整个进程的正常运行不受影响。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;log&quot;</span></span><br><span class="line">    <span class="string">&quot;time&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">        <span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">            <span class="keyword">if</span> err := <span class="built_in">recover</span>(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">                log.Printf(<span class="string">&quot;error: %v&quot;</span>, err)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;()</span><br><span class="line">        log.Panic(<span class="string">&quot;some error before work2&quot;</span>)</span><br><span class="line">        fmt.Println(<span class="string">&quot;do some work2&quot;</span>)</span><br><span class="line">    &#125;()</span><br><span class="line"></span><br><span class="line">    time.Sleep(time.Second)</span><br><span class="line">    fmt.Println(<span class="string">&quot;do some work1&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><em>执行上面代码请点击<a target="_blank" rel="noopener" href="https://play.golang.org/p/RLWyb813Uw">这里</a></em></p>
+<p>我们可以发现Go语言中的<code>panic</code>、<code>recover</code>机制，和Java、.NET中的<code>throw</code>、<code>try...catch</code>机制非常类似。</p>
+<h3 id="return-error的执行机制"><a href="#return-error的执行机制" class="headerlink" title="return error的执行机制"></a><code>return error</code>的执行机制</h3><p><code>return error</code>是利用Go语言函数的多值返回的特性，通过函数的其中一个返回值（一般是第一个或者最后一个），向<code>caller</code>返回函数执行过程中产生的异常，其它值返回执行结果。</p>
+<p>这种方式的问题，主要在于：如果函数调用层次比较多，每一层函数都通过<code>return error</code>方式返回错误，都需要处理被调用函数的<code>return error</code>，增加代码复杂度。对于无法恢复的错误也没有必要一层一层往上抛，直接<code>panic/recover</code>更加简洁。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;errors&quot;</span></span><br><span class="line">    <span class="string">&quot;log&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> R <span class="keyword">struct</span> &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">f1</span><span class="params">()</span></span> (<span class="type">error</span>, *R) &#123;</span><br><span class="line">    <span class="keyword">return</span> errors.New(<span class="string">&quot;an error&quot;</span>), <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">f2</span><span class="params">()</span></span> (<span class="type">error</span>, *R) &#123;</span><br><span class="line">    err, r := f1()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err, <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span>, r</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">f3</span><span class="params">()</span></span> (<span class="type">error</span>, *R) &#123;</span><br><span class="line">    err, r := f2()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err, <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span>, r</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    err, _ := f3()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        log.Print(err)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><em>执行上面代码请点击<a target="_blank" rel="noopener" href="https://play.golang.org/p/GhE5JpzZvn">这里</a></em></p>
+<h3 id="dlog错误处理原则"><a href="#dlog错误处理原则" class="headerlink" title="dlog错误处理原则"></a><code>dlog</code>错误处理原则</h3><p>使用<code>panic</code>还是<code>return error</code>的方式处理错误，要区分不同的场景。重要是不论使用<code>panic</code>还是<code>return error</code>，都需要符合架构上更高层面错误处理需求。</p>
+<p><code>dlog</code>是一个日志记录<code>package</code>，暴露给其它程序调用的方法如下：</p>
+<ul>
+<li><code>func NewLogger(example interface&#123;&#125;, opts *Options) (*Logger, error)</code></li>
+<li><code>func (l *Logger) Log(msg interface&#123;&#125;) error</code></li>
+</ul>
+<p>这两个方法的使用场景并不一样，错误处理原则也不完全一致：</p>
+<ul>
+<li><code>NewLogger</code>方法一般是在程序初始化的时候调用，用于创建记录程序运行过程中产生的data log的记录器。通过<code>NewLogger</code>创建一个<code>logger</code>的时候，如果传入参数不正确，使用<code>panic</code>方式，在上层调用程序不处理错误情况下会导致程序崩溃，所以使用<code>return error</code>方式向<code>caller</code>报告错误。大多数Golang package也是按此原则处理。</li>
+<li>上层程序调用<code>logger.Log</code>时，如果<code>Log</code>方法内部发生的错误，不能影响调用的代码的执行，所以这里绝对不能用<code>panic</code>方式抛出错误。日志记录是辅助功能，如果日志记录行为失败，导致业务逻辑代码执行不下去，估计负责业务逻辑开发的工程师会和你拼命。<ul>
+<li><code>logger.Log</code>可以使用<code>return error</code>方式返回<code>msg</code>校验类的错误</li>
+<li><code>logger.Log</code>发送日志采用的是异步批量方式向AWS Kinesis发送数据，向AWS Kinesis发送数据相关的错误无法通过<code>panic</code>或者<code>return error</code>方式直接报告给调用程序。最好的方式是允许调用程序向<code>logger</code>注册发送失败处理的<code>handler</code>，出现发送失败错误时执行<code>handler</code>逻辑。（暂未实现）</li>
+</ul>
+</li>
+</ul>
+<h2 id="如何实现一个logger只能接收对应类型的data-log"><a href="#如何实现一个logger只能接收对应类型的data-log" class="headerlink" title="如何实现一个logger只能接收对应类型的data log"></a>如何实现一个<code>logger</code>只能接收对应类型的<code>data log</code></h2><p>要实现一个<code>logger</code>只能接收对应类型的<code>data log</code>，主要思路如下：</p>
+<ul>
+<li><code>Logger</code>的定义中通过属性<code>msgType reflect.Type</code>记住能够接受的消息类型</li>
+<li>通过<code>NewLogger</code>方法创建<code>logger</code>的时候，指定<code>logger</code>可以接受的消息类型</li>
+<li><code>Log</code>方法中首先校验<code>msg</code>的类型是否是创建<code>logger</code>时指定的类型</li>
+</ul>
+<p>以下是相关代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// msgType保存Logger能够接受的消息类型</span></span><br><span class="line"><span class="keyword">type</span> Logger <span class="keyword">struct</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">    msgType    reflect.Type</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获得msg的reflect.Type</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">msgType</span><span class="params">(msg <span class="keyword">interface</span>&#123;&#125;)</span></span> (reflect.Type, <span class="type">error</span>) &#123;</span><br><span class="line">    t := reflect.TypeOf(msg)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> t.Kind() == reflect.Ptr &#123;</span><br><span class="line">        t = t.Elem()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> t.Kind() != reflect.Struct &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">&quot;dlog message must be either *struct or struct&quot;</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> t, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewLogger</span><span class="params">(example <span class="keyword">interface</span>&#123;&#125;, opts *Options)</span></span> (*Logger, <span class="type">error</span>) &#123;</span><br><span class="line">    t, e := msgType(example)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, e</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    l := &amp;Logger&#123;</span><br><span class="line">        ...</span><br><span class="line">        msgType:    t,</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> l, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(l *Logger)</span></span> Log(msg <span class="keyword">interface</span>&#123;&#125;) <span class="type">error</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> t, e := msgType(msg); e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> e</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> !t.AssignableTo(l.msgType) &#123;</span><br><span class="line">        <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;parameter (%+v) not assignable to %v&quot;</span>, msg, l.msgType)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>Log</code>方法中为什么要用<code>AssignableTo</code>，而不是直接判断两个类型相等。其实都可以，在<code>msg</code>是<code>struct</code>情况下，<code>AssignableTo</code>返回<code>True</code>意味着两个类型相等。参考下面的例子：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;log&quot;</span></span><br><span class="line">    <span class="string">&quot;reflect&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">type</span> Fn <span class="function"><span class="keyword">func</span><span class="params">(<span class="type">int</span>)</span></span> <span class="type">int</span></span><br><span class="line">    id := <span class="function"><span class="keyword">func</span><span class="params">(x <span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> x</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> zeroFn Fn</span><br><span class="line">    log.Println(reflect.TypeOf(id).AssignableTo(reflect.TypeOf(zeroFn)))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">type</span> MyInt <span class="type">int</span></span><br><span class="line">    mi := <span class="number">1</span></span><br><span class="line">    log.Println(reflect.TypeOf(<span class="number">2</span>).AssignableTo(reflect.TypeOf(mi)))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">type</span> S1 <span class="keyword">struct</span> &#123;</span><br><span class="line">        name <span class="type">string</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">type</span> S2 S1</span><br><span class="line"></span><br><span class="line">    s1 := S1&#123;</span><br><span class="line">        name: <span class="string">&quot;ethan&quot;</span>,</span><br><span class="line">    &#125;</span><br><span class="line">    s2 := S2&#123;</span><br><span class="line">        name: <span class="string">&quot;ethan&quot;</span>,</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// s2 = s1	// if uncomment this line, will report &quot;cannot use s1 (type S1) as type S2 in assignment&quot; when compile</span></span><br><span class="line">    log.Println(reflect.TypeOf(s1).AssignableTo(reflect.TypeOf(s2)))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><em>执行上面代码请点击<a target="_blank" rel="noopener" href="https://play.golang.org/p/eDmzxW-ayk">这里</a></em></p>
+<h2 id="如何实现批量发送data-log"><a href="#如何实现批量发送data-log" class="headerlink" title="如何实现批量发送data log"></a>如何实现批量发送<code>data log</code></h2><p>要实现批量发送，首先我们可以想到应该要有个<code>buffer</code>用来收集一定数量的的<code>message</code>，等待<code>buffer</code>中的数据积累到一定程度后，一次性发送给AWS Kinesis。设计<code>buffer</code>结构不难，难点在于如何解决多线程(goroutine)并发读写<code>buffer</code>的问题，主要的解决方案有两种：</p>
+<ul>
+<li>基于锁机制实现对<code>buffer</code>访问控制</li>
+<li>基于<code>channel</code>实现对<code>buffer</code>的访问控制</li>
+</ul>
+<p>前者对于有Java、.NET等语言的并发编程经验的工程师来说，非常熟悉。而后者则体现了CSP(Communicating Sequential Processes)并发编程模型的优势。</p>
+<img src="/2016/04/20/experiences-about-develop-dlog/channel.png" class="" title="CSP Model">
+
+<p><code>dlog</code>的<code>Log</code>方法把收到的<code>msg</code>写到名字叫<code>buffer</code>的<code>channel</code>中，另外一个单独的<code>goroutine</code>在<code>channel</code>的另一头收集编码后的日志信息，然后保存到<code>buf := make([][]byte, 0)</code>中。当<code>buf</code>中的数据量要达到一次向AWS Kinesis发送的最大量时，调用<code>flush</code>方法向AWS Kinesis发送数据。由于只有一个<code>goroutine</code>对<code>buf</code>进行访问，所以不需要通过锁机制控制对<code>buf</code>的读写。</p>
+<!--
+digraph G {
+    fontname="Microsoft YaHei";
+    fontsize=10;
+    rankdir = LR;
+
+    "buffer channel" [shape=box];
+
+    "Logger.Log goroutine 1" -> "buffer channel";
+    "Logger.Log goroutine 2" -> "buffer channel";
+    "Logger.Log goroutine 3" -> "buffer channel";
+    "buffer channel" -> "sync goroutine";
+    "sync goroutine" -> "AWS Kinesis Stream";
+}
+-->
+
+<!-- ![Thread Model](http://g.gravizo.com/g?digraph%20G%20%7B%0A%20%20%20%20fontname%3D%22Microsoft%20YaHei%22%3B%0A%20%20%20%20fontsize%3D10%3B%0A%20%20%20%20rankdir%20%3D%20LR%3B%0A%0A%20%20%20%20%22buffer%20channel%22%20%5Bshape%3Dbox%5D%3B%0A%0A%20%20%20%20%22Logger.Log%20goroutine%201%22%20-%3E%20%22buffer%20channel%22%3B%0A%20%20%20%20%22Logger.Log%20goroutine%202%22%20-%3E%20%22buffer%20channel%22%3B%0A%20%20%20%20%22Logger.Log%20goroutine%203%22%20-%3E%20%22buffer%20channel%22%3B%0A%20%20%20%20%22buffer%20channel%22%20-%3E%20%22sync%20goroutine%22%3B%0A%20%20%20%20%22sync%20goroutine%22%20-%3E%20%22AWS%20Kinesis%20Stream%22%3B%0A%20%7D) -->
+
+<img src="/2016/04/20/experiences-about-develop-dlog/use_channel.png" class="" title="使用Channel">
+
+<p>具体代码实现：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewLogger</span><span class="params">(example <span class="keyword">interface</span>&#123;&#125;, opts *Options)</span></span> (*Logger, <span class="type">error</span>) &#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="keyword">go</span> l.sync()    <span class="comment">// 启动sync goroutine</span></span><br><span class="line">    <span class="keyword">return</span> l, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(l *Logger)</span></span> Log(msg <span class="keyword">interface</span>&#123;&#125;) <span class="type">error</span> &#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    en := encode(msg)       <span class="comment">// 对msg进行编码</span></span><br><span class="line">    ...</span><br><span class="line">        <span class="keyword">select</span> &#123;</span><br><span class="line">        <span class="keyword">case</span> l.buffer &lt;- en:    <span class="comment">// 向buffer channel写入编码后的msg</span></span><br><span class="line">        ...</span><br><span class="line">        &#125;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(l *Logger)</span></span> sync() &#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    buf := <span class="built_in">make</span>([][]<span class="type">byte</span>, <span class="number">0</span>) <span class="comment">// 用于收集从buffer channel读取的日志数据</span></span><br><span class="line">    bufSize := <span class="number">0</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="keyword">select</span> &#123;</span><br><span class="line">        <span class="keyword">case</span> msg := &lt;-l.buffer:</span><br><span class="line">            <span class="keyword">if</span> bufSize+<span class="built_in">len</span>(msg)+partitionKeySize &gt;= maxBatchSize &#123;  <span class="comment">// 如果buf的大小接近一次批量发送的最大数据量</span></span><br><span class="line">                l.flush(&amp;buf, &amp;bufSize)                             <span class="comment">// 向AWS Kinesis批量发送数据</span></span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            buf = <span class="built_in">append</span>(buf, msg)                                  <span class="comment">// 将从buffer channel读取日志数据保存到buf中</span></span><br><span class="line">            bufSize += <span class="built_in">len</span>(msg) + partitionKeySize</span><br><span class="line"></span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="如何实现对Logger-Log方法的调用超时机制"><a href="#如何实现对Logger-Log方法的调用超时机制" class="headerlink" title="如何实现对Logger.Log方法的调用超时机制"></a>如何实现对<code>Logger.Log</code>方法的调用超时机制</h2><p>如果一个IO操作耗时较长，并且调用比较频繁的情况下，不仅会阻塞<code>caller</code>的执行，还会消耗大量系统资源。我们通常会使用超时机制，避免程序长时间等待或者对系统资源大量占用。</p>
+<p><code>Logger.Log</code>方法利用Go语言<code>channel</code>非常简洁的实现了超时机制：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(l *Logger)</span></span> Log(msg <span class="keyword">interface</span>&#123;&#125;) <span class="type">error</span> &#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> timeout &lt;-<span class="keyword">chan</span> time.Time</span><br><span class="line">    <span class="keyword">if</span> l.WriteTimeout &gt; <span class="number">0</span> &#123;</span><br><span class="line">        timeout = time.After(l.WriteTimeout)    <span class="comment">// 初始化时长为l.WriteTimeout的计时器</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">        <span class="keyword">select</span> &#123;</span><br><span class="line">        <span class="keyword">case</span> l.buffer &lt;- en:</span><br><span class="line">        <span class="keyword">case</span> &lt;-timeout: <span class="comment">// 如果上一行代码一直阻塞，timeout计时器时间到点后会触发执行当前case下的代码</span></span><br><span class="line">            <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;dlog writes %+v timeout after %v&quot;</span>, msg, l.WriteTimeout)</span><br><span class="line">        &#125;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对比Java、.NET语言中超时机制的实现方法，Go语言的实现简洁的令人发指：</p>
+<ul>
+<li>C#<ul>
+<li><a target="_blank" rel="noopener" href="http://weblogs.asp.net/israelio/159985">Implementing .Net method timeout</a></li>
+<li><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/18646650/how-to-implement-task-async-for-a-timer-in-c">How to implement Task Async for a timer in C#?</a></li>
+<li><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/10143980/implementing-a-timeout-in-c-sharp">Implementing a timeout in c#</a></li>
+</ul>
+</li>
+<li>Java<ul>
+<li><a target="_blank" rel="noopener" href="http://www.coderanch.com/t/232213/threads/java/implement-timeout-threads">How to implement timeout using threads</a></li>
+<li><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/2275443/how-to-timeout-a-thread">How to timeout a thread</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="如何在logger没有收到新msg情况下，保证buf中的数据依然会定期发送给AWS-Kinesis"><a href="#如何在logger没有收到新msg情况下，保证buf中的数据依然会定期发送给AWS-Kinesis" class="headerlink" title="如何在logger没有收到新msg情况下，保证buf中的数据依然会定期发送给AWS Kinesis"></a>如何在<code>logger</code>没有收到新<code>msg</code>情况下，保证<code>buf</code>中的数据依然会定期发送给AWS Kinesis</h2><p><code>dlog</code>在<code>Logger.sync()</code>方法中通过一个定时器，定期将<code>buf</code>中数据发送给AWS Kinesis。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(l *Logger)</span></span> sync() &#123;</span><br><span class="line">    <span class="keyword">if</span> l.SyncPeriod &lt;= <span class="number">0</span> &#123;</span><br><span class="line">        l.SyncPeriod = time.Second</span><br><span class="line">    &#125;</span><br><span class="line">    ticker := time.NewTicker(l.SyncPeriod)  <span class="comment">// l.SyncPeriod是定期发送的数据的时间间隔，ticker定时触发器</span></span><br><span class="line"></span><br><span class="line">    buf := <span class="built_in">make</span>([][]<span class="type">byte</span>, <span class="number">0</span>)</span><br><span class="line">    bufSize := <span class="number">0</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> &#123;  <span class="comment">// 无限循环保证sync goroutine一直工作</span></span><br><span class="line">        <span class="keyword">select</span> &#123;</span><br><span class="line">        <span class="keyword">case</span> msg := &lt;-l.buffer:</span><br><span class="line">            ...</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> &lt;-ticker.C: <span class="comment">// ticker.C的类型是&lt;-chan Time，每隔l.SyncPeriod时间会触发执行当前case的代码</span></span><br><span class="line">            <span class="keyword">if</span> bufSize &gt; <span class="number">0</span> &#123;</span><br><span class="line">                l.flush(&amp;buf, &amp;bufSize)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>ticker</code>，<code>dlog</code>保证了即使没有收到新的<code>msg</code>的时候，保存在<code>buf</code>中的数据最长<code>l.SyncPeriod</code>时间后也会发送给AWS Kinesis。</p>
+<p>互联网产品的生产环境的上线，通常的做法是，将现有服务分组，然后交替切流量、升级。如果没有类似的机制，那么在服务程序断掉流量，没有收到新的访问时候，保存在内存中的数据就不会发送出去，升级时就可能导致数据丢失。</p>
+<h2 id="如何向程序外部暴露运行指标"><a href="#如何向程序外部暴露运行指标" class="headerlink" title="如何向程序外部暴露运行指标"></a>如何向程序外部暴露运行指标</h2><p>Go语言的官方Package <code>expvar</code>提供一种标准化的接口，允许程序暴露公开访问的变量。<code>expvar</code>通过HTTP地址<code>/debug/vars</code>提供访问入口，并以JSON格式展示这些变量。下面是关于<code>expvar</code>常见用法的一个例子：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;expvar&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;net/http&quot;</span></span><br><span class="line">    <span class="string">&quot;sync&quot;</span></span><br><span class="line">    <span class="string">&quot;time&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">// Stats is used to collect runtime metrics</span></span><br><span class="line"><span class="keyword">type</span> Stats <span class="keyword">struct</span> &#123;</span><br><span class="line">    sync.Mutex</span><br><span class="line">    TotalHit  <span class="type">int</span></span><br><span class="line">    ErrorNums <span class="type">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Stats)</span></span> IncreaseTotalHit(i <span class="type">int</span>) &#123;</span><br><span class="line">    s.Lock()</span><br><span class="line">    <span class="keyword">defer</span> s.Unlock()</span><br><span class="line"></span><br><span class="line">    s.TotalHit += i</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Stats)</span></span> IncreaseErrorNums(i <span class="type">int</span>) &#123;</span><br><span class="line">    s.Lock()</span><br><span class="line">    <span class="keyword">defer</span> s.Unlock()</span><br><span class="line"></span><br><span class="line">    s.ErrorNums += i</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Stats)</span></span> String() <span class="type">string</span> &#123;</span><br><span class="line">    s.Lock()</span><br><span class="line">    <span class="keyword">defer</span> s.Unlock()</span><br><span class="line"></span><br><span class="line">    b, err := json.Marshal(*s)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;&#123;&#125;&quot;</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="type">string</span>(b)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">    stats *Stats</span><br><span class="line">    hits  *expvar.Map</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">    expvar.Publish(<span class="string">&quot;now&quot;</span>, expvar.Func(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> <span class="keyword">interface</span>&#123;&#125; &#123;</span><br><span class="line">        <span class="keyword">return</span> time.Now().Format(<span class="string">&quot;\&quot;2006-01-02 15:04:05\&quot;&quot;</span>)</span><br><span class="line">    &#125;))</span><br><span class="line"></span><br><span class="line">    stats = &amp;Stats&#123;&#125;</span><br><span class="line">    expvar.Publish(<span class="string">&quot;stats&quot;</span>, stats)</span><br><span class="line"></span><br><span class="line">    hits = expvar.NewMap(<span class="string">&quot;hits&quot;</span>).Init()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">homeHandler</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">    p := r.URL.Path[<span class="number">1</span>:]</span><br><span class="line">    hits.Add(p, <span class="number">1</span>)</span><br><span class="line">    stats.IncreaseTotalHit(<span class="number">1</span>)</span><br><span class="line">    fmt.Fprintf(w, <span class="string">&quot;Hey! I love %s! hits: %v\n&quot;</span>, p, hits.Get(p))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">errHandler</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">    stats.IncreaseErrorNums(<span class="number">1</span>)</span><br><span class="line">    fmt.Fprintf(w, <span class="string">&quot;Error Nums: %v\n&quot;</span>, stats.ErrorNums)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    http.HandleFunc(<span class="string">&quot;/err&quot;</span>, errHandler)</span><br><span class="line">    http.HandleFunc(<span class="string">&quot;/&quot;</span>, homeHandler)</span><br><span class="line">    http.ListenAndServe(<span class="string">&quot;:8080&quot;</span>, <span class="literal">nil</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>按照如下步骤测试运行效果：</p>
+<ul>
+<li><code>go run expvarexample.go</code>运行例子代码</li>
+<li>在浏览器中访问<code>http://localhost:8080/ethan</code></li>
+<li>在浏览器中访问<code>http://localhost:8080/err</code></li>
+<li>在浏览器中访问<code>http://localhost:8080/debug/vars</code>，得到如下结果：</li>
+</ul>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;cmdline&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;/var/folders/jf/65ft181j33j_d75ktgv67bsc0000gn/T/go-build467453980/command-line-arguments/_obj/exe/expvarsample&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;hits&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;ethan&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;favicon.ico&quot;</span><span class="punctuation">:</span> <span class="number">2</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;memstats&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> ... <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;now&quot;</span><span class="punctuation">:</span> <span class="string">&quot;\&quot;2016-04-19 20:17:40\&quot;&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;stats&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;TotalHit&quot;</span><span class="punctuation">:</span><span class="number">3</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;ErrorNums&quot;</span><span class="punctuation">:</span><span class="number">1</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://github.com/divan/expvarmon">expvarmon</a>是一个帮助查看<code>expvar</code>暴露运行指标的工具，用法如下：</p>
+<ul>
+<li>安装：<code>go get github.com/divan/expvarmon</code></li>
+<li>运行：<code>expvarmon -ports=&quot;8080&quot; -vars=&quot;hits.ethan,stats.TotalHit,stats.ErrorNums,now&quot;</code></li>
+<li>效果如下：</li>
+</ul>
+<img src="/2016/04/20/experiences-about-develop-dlog/expvarmon_screen.png" class="" title="expvarmon screen">
+
+<p><code>dlog</code>使用<code>expvar</code>向程序外部（比如监控程序）暴露运行指标，目前<code>dlog</code>中定义的运行指标包括：</p>
+<ul>
+<li><code>writtenRecords</code>: 成功写到AWS Kinesis的<code>msg</code>数量</li>
+<li><code>writtenBatches</code>: 成功调用AWS Kinesis批量写数据API的次数</li>
+<li><code>failedRecords</code>: 写到AWS Kinesis失败的<code>msg</code>数量</li>
+<li><code>tooBigMesssages</code>: 编码后体积过大(加上partitionKeySize大于1MB)的<code>msg</code>数量</li>
+</ul>
+<p>未来还需要根据运维的需求对运行指标进行调整，当前的用法也有一些问题，后期需要重构。</p>
+<h2 id="如何在单元测试中实现Setup和TearDown"><a href="#如何在单元测试中实现Setup和TearDown" class="headerlink" title="如何在单元测试中实现Setup和TearDown"></a>如何在单元测试中实现<code>Setup</code>和<code>TearDown</code></h2><p>Go语言提供一种<strong>轻量级</strong>的单元测试框架（无需第三方工具或者程序包）。通过使用<code>go test</code>命令和<code>testing</code> package，可以非常快速的实现单元测试。先借用官方文档中的<a target="_blank" rel="noopener" href="http://docs.studygolang.com/doc/code.html#Testing">例子</a>回顾一下Go单元测试框架的用法：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//$GOPATH/src/github.com/user/stringutil/reverse_test.go</span></span><br><span class="line"><span class="keyword">package</span> stringutil</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;testing&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestReverse</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    cases := []<span class="keyword">struct</span> &#123;</span><br><span class="line">        in, want <span class="type">string</span></span><br><span class="line">    &#125;&#123;</span><br><span class="line">        &#123;<span class="string">&quot;Hello, world&quot;</span>, <span class="string">&quot;dlrow ,olleH&quot;</span>&#125;,</span><br><span class="line">        &#123;<span class="string">&quot;Hello, 世界&quot;</span>, <span class="string">&quot;界世 ,olleH&quot;</span>&#125;,</span><br><span class="line">        &#123;<span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>&#125;,</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> _, c := <span class="keyword">range</span> cases &#123;</span><br><span class="line">        got := Reverse(c.in)</span><br><span class="line">        <span class="keyword">if</span> got != c.want &#123;</span><br><span class="line">            t.Errorf(<span class="string">&quot;Reverse(%q) == %q, want %q&quot;</span>, c.in, got, c.want)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行测试只需要简单的输入命令：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="keyword">go</span> test github.com/user/stringutil</span><br><span class="line">ok  	github.com/user/stringutil <span class="number">0.165</span>s</span><br></pre></td></tr></table></figure>
+
+<p>很多情况下，要执行单元测试，我们需要依赖一些外部资源，比如已完成初始化数据的数据库、公有云上的一些IaaS服务等。这些依赖资源，我们希望在单元测试执行前，能够自动的被初始化；单元测试完成后，能够自动的被清理。<a target="_blank" rel="noopener" href="https://github.com/stretchr/testify/suite">testify&#x2F;suite</a> package就提供这样的支持。通过<a target="_blank" rel="noopener" href="https://github.com/stretchr/testify/suite">testify&#x2F;suite</a>，你可以构建一个测试集<code>struct</code>，建立测试集的<code>setup</code>(初始化)&#x2F;<code>teardown</code>(清理)方法，和最终实现测试用例逻辑的方法。而运行测试，仍然只需要一句简单的<code>go test</code>。</p>
+<p>以下是使用<a target="_blank" rel="noopener" href="https://github.com/stretchr/testify/suite">testify&#x2F;suite</a>实现测试集的常见模式：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> suite</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;testing&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;github.com/stretchr/testify/assert&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> SuiteTester <span class="keyword">struct</span> &#123;</span><br><span class="line">    <span class="comment">// Include our basic suite logic.</span></span><br><span class="line">    Suite</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Other properties</span></span><br><span class="line">    propertyN <span class="type">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// The SetupSuite method will be run by testify once, at the very</span></span><br><span class="line"><span class="comment">// start of the testing suite, before any tests are run.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(suite *SuiteTester)</span></span> SetupSuite() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// The TearDownSuite method will be run by testify once, at the very</span></span><br><span class="line"><span class="comment">// end of the testing suite, after all tests have been run.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(suite *SuiteTester)</span></span> TearDownSuite() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// The SetupTest method will be run before every test in the suite.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(suite *SuiteTester)</span></span> SetupTest() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// The TearDownTest method will be run after every test in the suite.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(suite *SuiteTester)</span></span> TearDownTest() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// a test method</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(suite *SuiteTester)</span></span> TestOne() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// another test method</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(suite *SuiteTester)</span></span> TestTwo() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// TestRunSuite will be run by the &#x27;go test&#x27; command, so within it, we</span></span><br><span class="line"><span class="comment">// can run our suite using the Run(*testing.T, TestingSuite) function.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestRunSuite</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    suiteTester := <span class="built_in">new</span>(SuiteTester)</span><br><span class="line">    Run(t, suiteTester)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>dlog</code>中为了测试<code>Logger.Log</code>方法能否正常工作，按照上面的模式编写了相应的测试代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> dlog</span><br><span class="line"></span><br><span class="line"><span class="comment">//...</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> WriteLogSuiteTester <span class="keyword">struct</span> &#123;</span><br><span class="line">    suite.Suite</span><br><span class="line"></span><br><span class="line">    options     *Options</span><br><span class="line">    seachLogger *Logger</span><br><span class="line">    clickLogger *Logger</span><br><span class="line">    streamNames []<span class="type">string</span> <span class="comment">// save the created AWS Kinesis Streams, which will be removed in TearDownSuite()</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// The SetupSuite method will be run by testify once, at the very</span></span><br><span class="line"><span class="comment">// start of the testing suite, before any tests are run.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *WriteLogSuiteTester)</span></span> SetupSuite() &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// create stream 1</span></span><br><span class="line">    err = s.seachLogger.kinesis.CreateStream(s.seachLogger.streamName, testingShardCount)</span><br><span class="line">    s.Nil(err)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// create stream 2</span></span><br><span class="line">    err = s.clickLogger.kinesis.CreateStream(s.clickLogger.streamName, testingShardCount)</span><br><span class="line">    s.Nil(err)</span><br><span class="line"></span><br><span class="line">    s.streamNames = []<span class="type">string</span>&#123;s.seachLogger.streamName, s.clickLogger.streamName&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> &#123; <span class="comment">// waiting created stream&#x27;s status to be active</span></span><br><span class="line">        time.Sleep(<span class="number">1</span> * time.Second)</span><br><span class="line">        resp1, err1 := s.seachLogger.kinesis.DescribeStream(s.seachLogger.streamName)</span><br><span class="line">        s.Nil(err1)</span><br><span class="line"></span><br><span class="line">        resp2, err2 := s.seachLogger.kinesis.DescribeStream(s.clickLogger.streamName)</span><br><span class="line">        s.Nil(err2)</span><br><span class="line"></span><br><span class="line">        status1 := strings.ToLower(<span class="type">string</span>(resp1.StreamStatus))</span><br><span class="line">        status2 := strings.ToLower(<span class="type">string</span>(resp2.StreamStatus))</span><br><span class="line">        <span class="keyword">if</span> status1 == <span class="string">&quot;active&quot;</span> &amp;&amp; status2 == <span class="string">&quot;active&quot;</span> &#123;</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// The TearDownSuite method will be run by testify once, at the very</span></span><br><span class="line"><span class="comment">// end of the testing suite, after all tests have been run.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *WriteLogSuiteTester)</span></span> TearDownSuite() &#123;</span><br><span class="line">    <span class="keyword">if</span> s.streamNames == <span class="literal">nil</span> || <span class="built_in">len</span>(s.streamNames) == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> _, streamName := <span class="keyword">range</span> s.streamNames &#123;</span><br><span class="line">        err := s.seachLogger.kinesis.DeleteStream(streamName)</span><br><span class="line">        s.Nil(err)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *WriteLogSuiteTester)</span></span> TestWriteLog() &#123;</span><br><span class="line">    <span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; <span class="comment">// Recover if panicking to make sure TearDownSuite will be executed</span></span><br><span class="line">        <span class="keyword">if</span> r := <span class="built_in">recover</span>(); r != <span class="literal">nil</span> &#123;</span><br><span class="line">            s.Fail(fmt.Sprint(r))</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;()</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestRunWriteLogSuite</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    suiteTester := <span class="built_in">new</span>(WriteLogSuiteTester)</span><br><span class="line">    suite.Run(t, suiteTester)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注：</p>
+<ul>
+<li>很多场景下，测试程序自动创建依赖的资源需要运维部门的授权，所以实现前有必要先和运维部门沟通。</li>
+<li>云环境下，出于安全上的考虑，需要对创建、删除测试资源的账户管理严格管理<ul>
+<li>账户信息不能写在可以公开访问的测试代码、配置文件中</li>
+<li>只给账户分配必要资源的最小权限</li>
+<li>为账户能够创建的资源设定配额</li>
+</ul>
+</li>
+</ul>
+<h2 id="如何实现kinesisMock"><a href="#如何实现kinesisMock" class="headerlink" title="如何实现kinesisMock"></a>如何实现<code>kinesisMock</code></h2><p>上一节我们提到在测试执行前初始化依赖资源，现实场景中，并不是任何情况下都能够获得依赖的测试资源，或者测试资源也会出现不可用的情况。通过Mock技术，可以减少测试代码对其它资源（或模块）的依赖。</p>
+<p><code>dlog</code>的测试代码中，首先定义了一个<code>KinesisInterface</code>:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> KinesisInterface <span class="keyword">interface</span> &#123;</span><br><span class="line">    PutRecords(streamName <span class="type">string</span>, records []kinesis.PutRecordsRequestEntry) (resp *kinesis.PutRecordsResponse, err <span class="type">error</span>)</span><br><span class="line">    CreateStream(name <span class="type">string</span>, shardCount <span class="type">int</span>) <span class="type">error</span></span><br><span class="line">    DescribeStream(name <span class="type">string</span>) (resp *kinesis.StreamDescription, err <span class="type">error</span>)</span><br><span class="line">    DeleteStream(name <span class="type">string</span>) <span class="type">error</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>KinesisInterface</code>包含了<code>dlog</code>用到的<a target="_blank" rel="noopener" href="https://github.com/AdRoll/goamz/blob/master/kinesis/kinesis.go">github.com&#x2F;AdRoll&#x2F;goamz&#x2F;kinesis&#x2F;kinesis</a>的所有方法。因为Go语言<code>interface</code>实现<strong>非侵入式</strong>的特点，<a target="_blank" rel="noopener" href="https://github.com/AdRoll/goamz/blob/master/kinesis/kinesis.go">github.com&#x2F;AdRoll&#x2F;goamz&#x2F;kinesis&#x2F;kinesis</a>自动实现了<code>KinesisInterface</code>，我们再定义一个<code>kinesisMock</code>实现<code>KinesisInterface</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> kinesisMock <span class="keyword">struct</span> &#123;</span><br><span class="line">    <span class="comment">// Mapping from steam name to batches of batches</span></span><br><span class="line">    storage <span class="keyword">map</span>[<span class="type">string</span>][][]kinesis.PutRecordsRequestEntry</span><br><span class="line"></span><br><span class="line">    <span class="comment">// simulate lantency that sync to Kinesis</span></span><br><span class="line">    putRecordLatency time.Duration</span><br><span class="line"></span><br><span class="line">    <span class="comment">// created streams&#x27; names</span></span><br><span class="line">    streamNames []<span class="type">string</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// lock to solve concurrent call</span></span><br><span class="line">    lock sync.RWMutex</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newKinesisMock</span><span class="params">(putRecordsLatency time.Duration)</span></span> *kinesisMock &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;kinesisMock&#123;</span><br><span class="line">        storage:          <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>][][]kinesis.PutRecordsRequestEntry),</span><br><span class="line">        putRecordLatency: putRecordsLatency,</span><br><span class="line">        streamNames:      <span class="built_in">make</span>([]<span class="type">string</span>, <span class="number">0</span>),</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(mock *kinesisMock)</span></span> PutRecords(streamName <span class="type">string</span>, records []kinesis.PutRecordsRequestEntry) (resp *kinesis.PutRecordsResponse, err <span class="type">error</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(mock *kinesisMock)</span></span> CreateStream(name <span class="type">string</span>, shardCount <span class="type">int</span>) <span class="type">error</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(mock *kinesisMock)</span></span> DescribeStream(name <span class="type">string</span>) (resp *kinesis.StreamDescription, err <span class="type">error</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(mock *kinesisMock)</span></span> DeleteStream(name <span class="type">string</span>) <span class="type">error</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后，把业务代码中所有类型<code>kinesis</code>的变量，替换成<code>KinesisInterface</code>类型。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Logger <span class="keyword">struct</span> &#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    kinesis    KinesisInterface</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试代码中，在构造<code>Logger</code>时传入<code>kinesisMock</code>，而不是真实的<code>kinesis</code>，这样就做到了“狸猫换太子”。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestLoggingToMockKinesis</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    assert := assert.New(t)</span><br><span class="line"></span><br><span class="line">    l, e := NewLogger(&amp;impression&#123;&#125;, &amp;Options&#123;</span><br><span class="line">        <span class="comment">// ...</span></span><br><span class="line">        UseMockKinesis: <span class="literal">true</span>,</span><br><span class="line">        MockKinesis:    newKinesisMock(<span class="number">0</span>),</span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="如何模拟AWS-Kinesis响应慢或者不可用"><a href="#如何模拟AWS-Kinesis响应慢或者不可用" class="headerlink" title="如何模拟AWS Kinesis响应慢或者不可用"></a>如何模拟AWS Kinesis响应慢或者不可用</h2><p><code>kinesisMock</code>完全是我们“虚构”出来的一个<code>kinesis</code>，在它的基础上，我们完全可以模拟响应慢或者不可用的情况。</p>
+<p>上一节中，不知道大家注意到没有，<code>kinesisMock</code>有个属性叫<code>putRecordLatency</code>，用来模拟调用<code>PutRecords</code>方法的延迟时间。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> kinesisMock <span class="keyword">struct</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// simulate lantency that sync to Kinesis</span></span><br><span class="line">    putRecordLatency time.Duration</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(mock *kinesisMock)</span></span> PutRecords(streamName <span class="type">string</span>, records []kinesis.PutRecordsRequestEntry) (resp *kinesis.PutRecordsResponse, err <span class="type">error</span>) &#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    time.Sleep(mock.putRecordLatency) <span class="comment">// 模拟延迟</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>模拟不可用的<code>kinesis</code>则重新定义了一个<code>brokenKinesisMock</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> brokenKinesisMock <span class="keyword">struct</span> &#123;</span><br><span class="line">    *kinesisMock</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newBrokenKinesisMock</span><span class="params">()</span></span> *brokenKinesisMock &#123;</span><br><span class="line">    <span class="keyword">return</span> &amp;brokenKinesisMock&#123;</span><br><span class="line">        kinesisMock: newKinesisMock(<span class="number">0</span>),</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(mock *brokenKinesisMock)</span></span> PutRecords(streamName <span class="type">string</span>, records []kinesis.PutRecordsRequestEntry) (resp *kinesis.PutRecordsResponse, err <span class="type">error</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">&quot;Kinesis is broken&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>kinesisMock</code>是<code>brokenKinesisMock</code>的嵌入<code>struct</code>，<code>brokenKinesisMock</code>会自动拥有<code>kinesisMock</code>的所有公开方法，这样也就实现了<code>KinesisInterface</code>。</p>
+<h2 id="提交到代码库中的测试代码是否可以保留log-Print"><a href="#提交到代码库中的测试代码是否可以保留log-Print" class="headerlink" title="提交到代码库中的测试代码是否可以保留log.Print"></a>提交到代码库中的测试代码是否可以保留<code>log.Print</code></h2><p>结论是“不可以”，原因总结如下：</p>
+<ul>
+<li>测试代码中的<code>log.Print</code>，一般用于调试代码，或者在<code>stdout</code>打印出一些信息帮助判断测试失败原因。不论哪种目的，这样的代码目的都仅仅是为了辅助开发，而不应该出现在最终交付的产品代码中。</li>
+<li><code>go test</code>命令会在控制台输出失败的测试方法，如果加上<code>-v</code>标志会打印出所有测试方法的执行结果，<code>log.Print</code>会影响执行结果的展示效果。团队合作开发，如果每个人都在测试代码中加上自己的<code>log.Print</code>，那么控制台打印出来的测试结果就没法看了。</li>
+</ul>
+<h1 id="踩过的一些坑"><a href="#踩过的一些坑" class="headerlink" title="踩过的一些坑"></a>踩过的一些坑</h1><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.aws.amazon.com/kinesis/latest/APIReference/API_CreateStream.html">AWS Kinesis API - CreateStream</a>是异步创建Stream，而且耗时10+秒，才能完成一个Stream的创建。开始以为是同步创建，结果执行测试逻辑的时候总是出错。</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/AdRoll/goamz/blob/master/aws/regions.go">github.com&#x2F;AdRoll&#x2F;goamz&#x2F;aws&#x2F;regions.go</a>中缺少中国区AWS Kinesis的URL地址，调用中国区AWS Kinesis会出错。</li>
+<li>Travis CI会Kill掉执行时间超过1分钟的CI过程，而不是如它文档中介绍的“10分钟”</li>
+</ul>
+<h1 id="未来可以优化的地方"><a href="#未来可以优化的地方" class="headerlink" title="未来可以优化的地方"></a>未来可以优化的地方</h1><ul>
+<li>发送失败的错误事件机制</li>
+<li>实现Kinesis服务不可用或者响应慢的场景下<code>dlog</code>的容错处理</li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li><a target="_blank" rel="noopener" href="http://docs.studygolang.com/doc/effective_go.html">Effective Go</a></li>
+<li><a target="_blank" rel="noopener" href="https://aws.amazon.com/cn/documentation/kinesis/">Amazon Kinesis Documentation</a></li>
+<li><a target="_blank" rel="noopener" href="http://blog.golang.org/advanced-go-concurrency-patterns">Advanced Go Concurrency Patterns</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/afex/hystrix-go">hystrix-go</a></li>
+</ul>
+<h1 id="招聘消息"><a href="#招聘消息" class="headerlink" title="招聘消息"></a>招聘消息</h1><p>我所在的<a target="_blank" rel="noopener" href="http://www.augmn.com/">奥阁门科技有限公司</a>正在招聘后端、运维工程师，想加入的朋友、或者有朋友可以推荐的都可以联系我(<a href="mailto:&#x65;&#x74;&#104;&#x61;&#110;&#99;&#x61;&#105;&#x40;&#x71;&#113;&#x2e;&#x63;&#111;&#x6d;">ethancai@qq.com</a>)。</p>
+<img src="/2016/04/20/experiences-about-develop-dlog/2016-04-21_07-12-24.png" class="" title="办公环境1">
+
+<img src="/2016/04/20/experiences-about-develop-dlog/2016-04-21_07-12-40.png" class="" title="办公环境2">
+
+<p><strong>后端工程师 &#x2F; Backend Engineer</strong></p>
+<p>职责</p>
+<ul>
+<li>研讨和设计产品功能特性；</li>
+<li>设计研发系统后端的一个或多个独立服务（micro-service）模块；</li>
+<li>设计研发业务运营管理系统；</li>
+<li>Code Review。</li>
+</ul>
+<p>要求</p>
+<ul>
+<li>有良好的编程习惯和代码风格；</li>
+<li>精通至少一种后台开发语言，包括但不限于Go、Node.js、C++、Python；</li>
+<li>对RESTful、RPC等架构有深刻理解和运用经验；</li>
+<li>有丰富的web service、web app开发经验；使用过著名的开源应用框架，并完整阅读过源代码；</li>
+<li>对Mysql、Redis、MongoDB或同类数据存储技术有丰富的使用经验；</li>
+<li>有提交代码到著名开源库或创建过开源项目者优先；</li>
+<li>能熟练查阅英文技术文档；</li>
+<li>有开放、坦诚的沟通心态，乐于分享；</li>
+<li>5年以上工作经验，3年以上后台系统开发经验。</li>
+</ul>
+<p><strong>高级系统运维工程师 &#x2F; Senior Ops Engineer</strong></p>
+<p>职责</p>
+<ul>
+<li>负责日常业务系统基础实施（AWS）、网络及各子系统的管理维护。</li>
+<li>负责设计并部署相关应用平台，并提出平台的实施、运行报告。</li>
+<li>负责配合开发搭建测试平台，协助开发设计、推行、实施和持续改进。</li>
+<li>负责相关故障、疑难问题排查处理，编制汇总故障、问题，定期提交汇总报告。</li>
+<li>负责网络监控和应急反应，以确保网络系统有7*24小时的持续运作能力。</li>
+<li>负责日常系统维护，及监控，提供IT方面的服务和支持，保证系统的稳定。</li>
+</ul>
+<p>要求</p>
+<ul>
+<li>深入理解Linux&#x2F;Unix操作系统并能熟练使用，了解Linux系统内核，有相关操作系统调优经验优先；</li>
+<li>熟悉计算机网络基础知识，了解TCP&#x2F;IP、HTTP等网络协议；</li>
+<li>熟悉系统服务的管理和维护，例如：Nginx、DNS服务器、NTP服务等；</li>
+<li>熟悉一种或者多种脚本语言，例如：Shell、Python、Perl 、Ruby等；</li>
+<li>熟练掌握Linux管理相关命令行工具，例如：grep、awk、sed、tmux、vim等；</li>
+<li>对数据库系统（MySQL）运维管理有一定的了解；</li>
+<li>熟悉常见分布式系统系统架构部署管理，熟悉基础设施管理、并具有较强的故障排查和解决问题的能力；</li>
+<li>具有 2 年以上中大型互联网系统或亚马逊AWS管理经验者优先；</li>
+<li>有DevOps经验者优先；</li>
+<li>学习能力和沟通能力较强，具有良好的团队协作精神；</li>
+<li>工作中需要胆大心细，具备探索创新精神；</li>
+<li>具有良好的文档编写能力；</li>
+<li>具有一定的英文技术文档阅读能力。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/golang/" rel="tag"># golang</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2016/03/26/product-design-vs-requirement-analysis/" rel="prev" title="需求分析：填补产品设计到技术实现之间的“信息断层”">
+                  <i class="fa fa-angle-left"></i> 需求分析：填补产品设计到技术实现之间的“信息断层”
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2016/06/23/bad-parts-about-json-serialization-in-Golang/" rel="next" title="Golang中遇到的一些关于JSON处理的坑">
+                  Golang中遇到的一些关于JSON处理的坑 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Ethan Cai</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

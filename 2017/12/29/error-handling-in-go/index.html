@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ethancai.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="上图来自 go proverbs 概述在实际工程项目中，我们希望通过程序的错误信息快速定位问题，但是又不喜欢错误处理代码写的冗余而又啰嗦。Go语言没有提供像Java、C#语言中的try...catch异常处理方式，而是通过函数返回值逐层往上抛。这种设计，鼓励工程师在代码中显式的检查错误，而非忽略错误，好处就是避免漏掉本应处理的错误。但是带来一个弊端，让代码啰嗦。 Go标准包提供的错误处理功能er">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go语言中的错误处理（Error Handling in Go）">
+<meta property="og:url" content="http://ethancai.github.io/2017/12/29/error-handling-in-go/index.html">
+<meta property="og:site_name" content="一家之言">
+<meta property="og:description" content="上图来自 go proverbs 概述在实际工程项目中，我们希望通过程序的错误信息快速定位问题，但是又不喜欢错误处理代码写的冗余而又啰嗦。Go语言没有提供像Java、C#语言中的try...catch异常处理方式，而是通过函数返回值逐层往上抛。这种设计，鼓励工程师在代码中显式的检查错误，而非忽略错误，好处就是避免漏掉本应处理的错误。但是带来一个弊端，让代码啰嗦。 Go标准包提供的错误处理功能er">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ethancai.github.io/2017/12/29/error-handling-in-go/d2a2d12e1a00f819d7fd7af4b536efa2.png">
+<meta property="article:published_time" content="2017-12-29T02:23:06.000Z">
+<meta property="article:modified_time" content="2025-04-27T17:04:49.537Z">
+<meta property="article:author" content="Ethan Cai">
+<meta property="article:tag" content="golang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://ethancai.github.io/2017/12/29/error-handling-in-go/d2a2d12e1a00f819d7fd7af4b536efa2.png">
+
+
+<link rel="canonical" href="http://ethancai.github.io/2017/12/29/error-handling-in-go/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://ethancai.github.io/2017/12/29/error-handling-in-go/","path":"2017/12/29/error-handling-in-go/","title":"Go语言中的错误处理（Error Handling in Go）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Go语言中的错误处理（Error Handling in Go） | 一家之言</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">一家之言</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">读万卷书，行万里路</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Go%E6%A0%87%E5%87%86%E5%8C%85%E6%8F%90%E4%BE%9B%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E5%8A%9F%E8%83%BD"><span class="nav-number">2.</span> <span class="nav-text">Go标准包提供的错误处理功能</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86%E9%94%99%E8%AF%AF"><span class="nav-number">3.</span> <span class="nav-text">如何处理错误</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Go%E8%AF%AD%E8%A8%80%E4%B8%AD%E4%B8%89%E7%A7%8D%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E7%AD%96%E7%95%A5"><span class="nav-number">3.1.</span> <span class="nav-text">Go语言中三种错误处理策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%94%E5%9B%9E%E5%92%8C%E6%A3%80%E6%9F%A5%E9%94%99%E8%AF%AF%E5%80%BC"><span class="nav-number">3.1.1.</span> <span class="nav-text">返回和检查错误值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E9%94%99%E8%AF%AF%E7%B1%BB%E5%9E%8B"><span class="nav-number">3.1.2.</span> <span class="nav-text">自定义错误类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9A%90%E8%97%8F%E5%86%85%E9%83%A8%E7%BB%86%E8%8A%82%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86"><span class="nav-number">3.1.3.</span> <span class="nav-text">隐藏内部细节的错误处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E5%90%88%E9%80%82%E7%9A%84%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86%E7%AD%96%E7%95%A5"><span class="nav-number">3.2.</span> <span class="nav-text">最合适的错误处理策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%BE%93%E5%87%BA%E6%9B%B4%E8%AF%A6%E7%BB%86%E7%9A%84%E9%94%99%E8%AF%AF%E4%BF%A1%E6%81%AF"><span class="nav-number">3.2.1.</span> <span class="nav-text">如何输出更详细的错误信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BA%86%E8%A1%8C%E4%B8%BA%E6%96%AD%E8%A8%80%E9%94%99%E8%AF%AF%EF%BC%8C%E8%80%8C%E9%9D%9E%E4%B8%BA%E4%BA%86%E7%B1%BB%E5%9E%8B"><span class="nav-number">3.2.2.</span> <span class="nav-text">为了行为断言错误，而非为了类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8D%E8%A6%81%E5%BF%BD%E7%95%A5%E9%94%99%E8%AF%AF%EF%BC%8C%E4%B9%9F%E4%B8%8D%E8%A6%81%E9%87%8D%E5%A4%8D%E5%A4%84%E7%90%86%E9%94%99%E8%AF%AF"><span class="nav-number">3.2.3.</span> <span class="nav-text">不要忽略错误，也不要重复处理错误</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Ethan Cai</p>
+  <div class="site-description" itemprop="description">Stay hungry, stay foolish</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://ethancai.github.io/2017/12/29/error-handling-in-go/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Ethan Cai">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一家之言">
+      <meta itemprop="description" content="Stay hungry, stay foolish">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Go语言中的错误处理（Error Handling in Go） | 一家之言">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Go语言中的错误处理（Error Handling in Go）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017-12-29 10:23:06" itemprop="dateCreated datePublished" datetime="2017-12-29T10:23:06+08:00">2017-12-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-04-28 01:04:49" itemprop="dateModified" datetime="2025-04-28T01:04:49+08:00">2025-04-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E7%BC%96%E7%A8%8B%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">编程开发</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><img src="/2017/12/29/error-handling-in-go/d2a2d12e1a00f819d7fd7af4b536efa2.png" class="">
+<p><small><em>上图来自 <a href="https://go-proverbs.github.io/" title="" target="">go proverbs</a></em></small></p>
+<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>在实际工程项目中，我们希望通过程序的错误信息快速定位问题，但是又不喜欢错误处理代码写的冗余而又啰嗦。<code>Go</code>语言没有提供像<code>Java</code>、<code>C#</code>语言中的<code>try...catch</code>异常处理方式，而是通过函数返回值逐层往上抛。这种设计，鼓励工程师在代码中显式的检查错误，而非忽略错误，好处就是避免漏掉本应处理的错误。但是带来一个弊端，让代码啰嗦。</p>
+<h1 id="Go标准包提供的错误处理功能"><a href="#Go标准包提供的错误处理功能" class="headerlink" title="Go标准包提供的错误处理功能"></a>Go标准包提供的错误处理功能</h1><p><code>error</code>是个<code>interface</code>:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> <span class="type">error</span> <span class="keyword">interface</span> &#123;</span><br><span class="line">    Error() <span class="type">string</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如何创建<code>error</code>:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// example 1</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Sqrt</span><span class="params">(f <span class="type">float64</span>)</span></span> (<span class="type">float64</span>, <span class="type">error</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> f &lt; <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>, errors.New(<span class="string">&quot;math: square root of negative number&quot;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// implementation</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// example 2</span></span><br><span class="line"><span class="keyword">if</span> f &lt; <span class="number">0</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>, fmt.Errorf(<span class="string">&quot;math: square root of negative number %g&quot;</span>, f)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如何自定义<code>error</code>:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// errorString is a trivial implementation of error.</span></span><br><span class="line"><span class="keyword">type</span> errorString <span class="keyword">struct</span> &#123;</span><br><span class="line">    s <span class="type">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *errorString)</span></span> Error() <span class="type">string</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> e.s</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>自定义<code>error</code>类型可以拥有一些附加方法。比如<code>net.Error</code>定义如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> net</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Error <span class="keyword">interface</span> &#123;</span><br><span class="line">    <span class="type">error</span></span><br><span class="line">    Timeout() <span class="type">bool</span>   <span class="comment">// Is the error a timeout?</span></span><br><span class="line">    Temporary() <span class="type">bool</span> <span class="comment">// Is the error temporary?</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>网络客户端程序代码可以使用类型断言判断网络错误是瞬时错误还是永久错误。比如，一个网络爬虫可以在碰到瞬时错误的时候，等待一段时间然后重试。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> nerr, ok := err.(net.Error); ok &amp;&amp; nerr.Temporary() &#123;</span><br><span class="line">    time.Sleep(<span class="number">1e9</span>)</span><br><span class="line">    <span class="keyword">continue</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">    log.Fatal(err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="如何处理错误"><a href="#如何处理错误" class="headerlink" title="如何处理错误"></a>如何处理错误</h1><p>go标准包提供的错误处理方式虽然简单，但是在实际项目开发、运维过程中，会经常碰到如下问题：</p>
+<ul>
+<li>函数该如何返回错误，是用值，还是用特殊的错误类型</li>
+<li>如何检查被调用函数返回的错误，是判断错误值，还是用类型断言</li>
+<li>程序中每层代码在碰到错误的时候，是每层都处理，还是只用在最上层处理，如何做到优雅</li>
+<li>日志中的异常信息不够完整、缺少stack strace，不方便定位错误原因</li>
+</ul>
+<p>我一直思考<code>Go</code>语言中该如何处理错误。下面的内容介绍了生产级<code>Go</code>语言代码中如何处理错误。</p>
+<blockquote>
+<p>以下内容，主要来自于<a target="_blank" rel="noopener" href="https://dave.cheney.net/paste/gocon-spring-2016.pdf">Dave Cheney 写的一个演讲文档</a>。</p>
+</blockquote>
+<h2 id="Go语言中三种错误处理策略"><a href="#Go语言中三种错误处理策略" class="headerlink" title="Go语言中三种错误处理策略"></a>Go语言中三种错误处理策略</h2><p><code>go</code>语言中一般有三种错误处理策略：</p>
+<ul>
+<li>返回和检查错误值：通过特定值表示成功和不同的错误，上层代码检查错误的值，来判断被调用<code>func</code>的执行状态</li>
+<li>自定义错误类型：通过自定义的错误类型来表示特定的错误，上层代码通过类型断言判断错误的类型</li>
+<li>隐藏内部细节的错误处理：假设上层代码不知道被调用函数返回的错误任何细节，直接再向上返回错误</li>
+</ul>
+<h3 id="返回和检查错误值"><a href="#返回和检查错误值" class="headerlink" title="返回和检查错误值"></a>返回和检查错误值</h3><p>这种方式在其它语言中，也很常见。比如，<a target="_blank" rel="noopener" href="http://www.virtsync.com/c-error-codes-include-errno">C Error Codes in Linux</a>。</p>
+<p>go标准库中提供一些例子：</p>
+<ul>
+<li><code>io.EOF</code>: 参考<a target="_blank" rel="noopener" href="https://github.com/golang/go/blob/master/src/io/io.go#L38">这里</a></li>
+<li><code>syscall.ENOENT</code>: 参考<a target="_blank" rel="noopener" href="https://github.com/golang/go/blob/master/src/syscall/zerrors_linux_amd64.go#L1280">这里</a></li>
+<li><code>go/build.NoGoError</code>: 参考<a target="_blank" rel="noopener" href="https://github.com/golang/go/blob/master/src/go/build/build.go#L446">这里</a></li>
+<li><code>path/filepath.SkipDir</code>: 参考<a target="_blank" rel="noopener" href="https://github.com/golang/go/blob/master/src/path/filepath/path.go#L331">这里</a></li>
+</ul>
+<p>这种策略是最不灵活的错误处理策略，上层代码需要判断返回错误值是否等于特定值。如果想修改返回的错误值，则会破坏上层调用代码的逻辑。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">buf := <span class="built_in">make</span>([]<span class="type">byte</span>, <span class="number">100</span>)</span><br><span class="line">n, err := r.Read(buf)   <span class="comment">// 如果修改 r.Read，在读到文件结尾时，返回另外一个 error，比如 io.END，而不是 io.EOF，则所有调用 r.Read 的代码都必须修改</span></span><br><span class="line">buf = buf[:n]</span><br><span class="line"><span class="keyword">if</span> err == io.EOF &#123;</span><br><span class="line">    log.Fatal(<span class="string">&quot;read failed:&quot;</span>, err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>另外一种场景也属于这类情况，上层代码通过检查错误的<code>Error</code>方法的返回值是否包含特定字符串，来判定如何进行错误处理。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">readfile</span><span class="params">(path <span class="type">string</span>)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">    err := openfile(path)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;cannot open file: %v&quot;</span>, err)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    err := readfile(<span class="string">&quot;.bashrc&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> strings.Contains(<span class="type">error</span>.Error(), <span class="string">&quot;not found&quot;</span>) &#123;</span><br><span class="line">        <span class="comment">// handle error</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong><code>error</code> interface 的 <code>Error</code> 方法的输出，是给人看的，不是给机器看的。我们通常会把<code>Error</code>方法返回的字符串打印到日志中，或者显示在控制台上。永远不要通过判断<code>Error</code>方法返回的字符串是否包含特定字符串，来决定错误处理的方式。</strong></p>
+</blockquote>
+<p>如果你是开发一个公共库，库的API返回了特定值的错误值。那么必须把这个特定值的错误定义为<code>public</code>，写在文档中。</p>
+<p>“高内聚、低耦合”是衡量公共库质量的一个重要方面，而返回特定错误值的方式，增加了公共库和调用代码的耦合性。让模块之间产生了依赖。</p>
+<h3 id="自定义错误类型"><a href="#自定义错误类型" class="headerlink" title="自定义错误类型"></a>自定义错误类型</h3><p>这种方式的典型用法如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 定义错误类型</span></span><br><span class="line"><span class="keyword">type</span> MyError <span class="keyword">struct</span> &#123;</span><br><span class="line">    Msg <span class="type">string</span></span><br><span class="line">    File <span class="type">string</span></span><br><span class="line">    Line <span class="type">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *MyError)</span></span> Error() <span class="type">string</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> fmt.Sprintf(<span class="string">&quot;%s:%d: %s&quot;</span>, e.File, e.Line, e.Msg)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// 被调用函数中</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doSomething</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="comment">// do something</span></span><br><span class="line">    <span class="keyword">return</span> &amp;MyError&#123;<span class="string">&quot;Something happened&quot;</span>, <span class="string">&quot;server.go&quot;</span>, <span class="number">42</span>&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 调用代码中</span></span><br><span class="line">err := doSomething()</span><br><span class="line"><span class="keyword">if</span> err, ok := err.(SomeType); ok &#123;    <span class="comment">// 使用 类型断言 获得错误详细信息</span></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这种方式相比于“返回和检查错误值”，很大一个优点在于可以将 底层错误 包起来一起返回给上层，这样可以提供更多的上下文信息。比如<code>os.PathError</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// PathError records an error and the operation</span></span><br><span class="line"><span class="comment">// and file path that caused it.</span></span><br><span class="line"><span class="keyword">type</span> PathError <span class="keyword">struct</span> &#123;</span><br><span class="line">    Op <span class="type">string</span></span><br><span class="line">    Path <span class="type">string</span></span><br><span class="line">    Err <span class="type">error</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *PathError)</span></span> Error() <span class="type">string</span></span><br></pre></td></tr></table></figure>
+
+<p>然而，这种方式依然会增加模块之间的依赖。</p>
+<h3 id="隐藏内部细节的错误处理"><a href="#隐藏内部细节的错误处理" class="headerlink" title="隐藏内部细节的错误处理"></a>隐藏内部细节的错误处理</h3><p>这种策略之所以叫“隐藏内部细节的错误处理”，是因为当上层代码碰到错误发生的时候，不知道错误的内部细节。</p>
+<p><strong>作为上层代码，你需要知道的就是被调用函数是否正常工作。</strong> 如果你接受这个原则，将极大降低模块之间的耦合性。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> “github.com/quux/bar”</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">fn</span><span class="params">()</span></span> <span class="type">error</span> &#123;</span><br><span class="line">    x, err := bar.Foo()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// use x</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的例子中，<code>Foo</code>这个方法不承诺返回的错误的具体内容。这样，<code>Foo</code>函数的开发者可以不断调整返回错误的内容来提供更多的错误信息，而不会破坏<code>Foo</code>提供的协议。这就是“隐藏内部细节”的内涵。</p>
+<h2 id="最合适的错误处理策略"><a href="#最合适的错误处理策略" class="headerlink" title="最合适的错误处理策略"></a>最合适的错误处理策略</h2><p>上面我们提到了三种错误处理策略，其中第三种策略耦合性最低。然而，第三种方式也存在一些问题：</p>
+<ul>
+<li>如何获得更详细错误信息，比如<code>stack trace</code>，帮助定位错误原因</li>
+<li>如何优雅的处理错误<ul>
+<li>有些场景需要了解错误细节，比如网络调用，需要知道是否是瞬时的中断</li>
+<li>是否每层捕捉到错误的时候都需要处理</li>
+</ul>
+</li>
+</ul>
+<h3 id="如何输出更详细的错误信息"><a href="#如何输出更详细的错误信息" class="headerlink" title="如何输出更详细的错误信息"></a>如何输出更详细的错误信息</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">AuthenticateRequest</span><span class="params">(r *Request)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">    err := authenticate(r.User)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err  <span class="comment">// No such file or directory</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面这段代码，在我看来，在顶层打印错误的时候，只看到一个类似于”No such file or directory”的文字，从这段文字中，无法了解到错误是哪行代码产生的，也无法知道当时出错的调用堆栈。</p>
+<p>我们调整一下代码，如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">AuthenticateRequest</span><span class="params">(r *Request)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">    err := authenticate(r.User)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;authenticate failed: %v&quot;</span>, err)    <span class="comment">// authenticate failed: No such file or directory</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>fmt.Errorf</code>创建一个新的错误，添加更多的上下文信息到新的错误中，但这样仍不能解决上面提出的问题。</p>
+<p>这里，我们通过一个很小的包<code>github.com/pkg/errors</code>来试图解决上面的问题。这个包提供这样几个主要的API：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Wrap annotates cause with a message.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Wrap</span><span class="params">(cause <span class="type">error</span>, message <span class="type">string</span>)</span></span> <span class="type">error</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Cause unwraps an annotated error.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Cause</span><span class="params">(err <span class="type">error</span>)</span></span> <span class="type">error</span></span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://github.com/EthanCai/goErrorHandlingSample">goErrorHandlingSample</a>这个repo中的例子演示了，不同错误处理方式，输出的错误信息的区别。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt; go run sample1/main.go</span><br><span class="line"></span><br><span class="line">open /Users/caichengyang/.settings.xml: no such file or directory</span><br><span class="line"><span class="built_in">exit</span> status 1</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt; go run sample2/main.go</span><br><span class="line"></span><br><span class="line">could not <span class="built_in">read</span> config: open failed: open /Users/caichengyang/.settings.xml: no such file or directory</span><br><span class="line"><span class="built_in">exit</span> status 1</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt; go run sample3/main.go</span><br><span class="line"></span><br><span class="line">could not <span class="built_in">read</span> config: open failed: open /Users/caichengyang/.settings.xml: no such file or directory</span><br><span class="line"><span class="built_in">exit</span> status 1</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">&gt; go run sample4/main.go</span><br><span class="line"></span><br><span class="line">open /Users/caichengyang/.settings.xml: no such file or directory</span><br><span class="line">open failed</span><br><span class="line">main.ReadFile</span><br><span class="line">        /Users/caichengyang/go/src/github.com/ethancai/goErrorHandlingSample/sample4/main.go:15</span><br><span class="line">main.ReadConfig</span><br><span class="line">        /Users/caichengyang/go/src/github.com/ethancai/goErrorHandlingSample/sample4/main.go:27</span><br><span class="line">main.main</span><br><span class="line">        /Users/caichengyang/go/src/github.com/ethancai/goErrorHandlingSample/sample4/main.go:32</span><br><span class="line">runtime.main</span><br><span class="line">        /usr/local/Cellar/go/1.9.2/libexec/src/runtime/proc.go:195</span><br><span class="line">runtime.goexit</span><br><span class="line">        /usr/local/Cellar/go/1.9.2/libexec/src/runtime/asm_amd64.s:2337</span><br><span class="line">could not <span class="built_in">read</span> config</span><br><span class="line">main.ReadConfig</span><br><span class="line">        /Users/caichengyang/go/src/github.com/ethancai/goErrorHandlingSample/sample4/main.go:28</span><br><span class="line">main.main</span><br><span class="line">        /Users/caichengyang/go/src/github.com/ethancai/goErrorHandlingSample/sample4/main.go:32</span><br><span class="line">runtime.main</span><br><span class="line">        /usr/local/Cellar/go/1.9.2/libexec/src/runtime/proc.go:195</span><br><span class="line">runtime.goexit</span><br><span class="line">        /usr/local/Cellar/go/1.9.2/libexec/src/runtime/asm_amd64.s:2337</span><br><span class="line"><span class="built_in">exit</span> status 1</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><code>sample4/main.go</code>中将出错的代码行数也打印了出来，这样的日志，可以帮助我们更方便的定位问题原因。</p>
+<h3 id="为了行为断言错误，而非为了类型"><a href="#为了行为断言错误，而非为了类型" class="headerlink" title="为了行为断言错误，而非为了类型"></a>为了行为断言错误，而非为了类型</h3><p>在有些场景下，仅仅知道是否出错是不够的。比如，和进程外其它服务通信，需要了解错误的属性，以决定是否需要重试操作。</p>
+<p>这种情况下，不要判断错误值或者错误的类型，我们可以判断错误是否实现某个行为。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> temporary <span class="keyword">interface</span> &#123;</span><br><span class="line">    Temporary() <span class="type">bool</span>    <span class="comment">// IsTemporary returns true if err is temporary.</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">IsTemporary</span><span class="params">(err <span class="type">error</span>)</span></span> <span class="type">bool</span> &#123;</span><br><span class="line">    te, ok := err.(temporary)</span><br><span class="line">    <span class="keyword">return</span> ok &amp;&amp; te.Temporary()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这种实现方式的好处在于，不需要知道具体的错误类型，也就不需要引用定义了错误类型的三方<code>package</code>。如果你是底层代码的开发者，哪天你想更换一个实现更好的<code>error</code>，也不用担心影响上层代码逻辑。如果你是上层代码的开发者，你只需要关注<code>error</code>是否实现了特定行为，不用担心引用的三方<code>package</code>升级后，程序逻辑失败。</p>
+<p>习大大说：“听其言、观其行”。小时候父母总是教导：“不要以貌取人”。原来生活中的道理，在程序开发中也是适用的。</p>
+<h3 id="不要忽略错误，也不要重复处理错误"><a href="#不要忽略错误，也不要重复处理错误" class="headerlink" title="不要忽略错误，也不要重复处理错误"></a>不要忽略错误，也不要重复处理错误</h3><p>遇到错误，而不去处理，导致信息缺失，会增加后期的运维成本</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Write</span><span class="params">(w io.Writer, buf []<span class="type">byte</span>)</span></span> &#123;</span><br><span class="line">    w.Write(buf)    <span class="comment">// Write(p []byte) (n int, err error)，Write方法的定义见 https://golang.org/pkg/io/#Writer</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重复处理，添加了不必要的处理逻辑，导致信息冗余，也会增加后期的运维成本</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Write</span><span class="params">(w io.Writer, buf []<span class="type">byte</span>)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">    _, err := w.Write(buf)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        log.Println(<span class="string">&quot;unable to write:&quot;</span>, err)    <span class="comment">// 第1次错误处理</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="comment">// create writer and read data into buf</span></span><br><span class="line"></span><br><span class="line">    err := Write(w, buf)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        log.Println(<span class="string">&quot;Write error:&quot;</span>, err)        <span class="comment">// 第2次错误处理</span></span><br><span class="line">        os.Exit(<span class="number">1</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    os.Exit(<span class="number">0</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ul>
+<li>使用“隐藏内部细节的错误处理”<ul>
+<li>使用<code>errors.Wrap</code>封装原始<code>error</code></li>
+<li>使用<code>errors.Cause</code>找出原始<code>error</code></li>
+</ul>
+</li>
+<li>为了行为而断言，而不是类型</li>
+<li>尽量减少错误值的使用</li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li>The Go Blog<ul>
+<li><a target="_blank" rel="noopener" href="https://blog.golang.org/error-handling-and-go">Error handling in Go</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.golang.org/defer-panic-and-recover">Defer, Panic, and Recover</a></li>
+</ul>
+</li>
+<li>Dave Cheney<ul>
+<li><a target="_blank" rel="noopener" href="https://dave.cheney.net/paste/gocon-spring-2016.pdf">presentation on my philosophy for error handling</a></li>
+<li><a target="_blank" rel="noopener" href="https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully">Don’t just check errors, handle them gracefully</a></li>
+<li><a target="_blank" rel="noopener" href="https://dave.cheney.net/2016/06/12/stack-traces-and-the-errors-package">Stack traces and the errors package</a></li>
+</ul>
+</li>
+<li>Go Packages<ul>
+<li><a target="_blank" rel="noopener" href="https://golang.org/pkg/errors/">errors</a></li>
+<li><a target="_blank" rel="noopener" href="https://golang.org/pkg/runtime/">runtime</a></li>
+</ul>
+</li>
+<li>pkg: Artisanal, hand crafted, barrel aged, Go packages<ul>
+<li><a target="_blank" rel="noopener" href="https://godoc.org/github.com/pkg/errors">github.com&#x2F;pkg&#x2F;errors</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/golang/" rel="tag"># golang</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2016/06/23/bad-parts-about-json-serialization-in-Golang/" rel="prev" title="Golang中遇到的一些关于JSON处理的坑">
+                  <i class="fa fa-angle-left"></i> Golang中遇到的一些关于JSON处理的坑
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Ethan Cai</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
